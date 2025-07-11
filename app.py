@@ -236,41 +236,59 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             app.logger.info(f"Skipping divider question {question_id}")
                             continue
 
-                        # Check if this question was answered in the form
-                        if question_id in submission_data:
-                            response_value = submission_data[question_id]
+                        # Check if this question was answered in the form - try multiple possible field names
+                        response_value = None
+                        possible_field_names = [
+                            question_id,
+                            f"question_{question_id}",
+                            f"q_{question_id}",
+                            question_id.replace('question_', ''),
+                        ]
+                        
+                        for field_name in possible_field_names:
+                            if field_name in submission_data:
+                                response_value = submission_data[field_name]
+                                app.logger.info(f"Found answer for question {question_id} in field '{field_name}': '{response_value}'")
+                                break
+                        
+                        if response_value is not None:
                             app.logger.info(f"Question {question_id} answered with: '{response_value}' (type: {type(response_value)})")
                             
-                            # Only process if there's a response and destination column
-                            if response_value and str(response_value).strip() and destination_column and destination_column.strip():
+                            # Convert values
+                            response_str = str(response_value).strip()
+                            if response_str:
                                 # Preserve Portuguese values - don't translate
-                                if response_value == "yes":
-                                    response_value = "Sim"
-                                elif response_value == "no":
-                                    response_value = "Não"
-
-                                updates_to_process.append({
-                                    'column_id': destination_column,
-                                    'value': response_value,
-                                    'description': f"Question {question_id} ({question_type}) response: {question_text}"
-                                })
-                                app.logger.info(f"Added to updates: {question_id} -> {destination_column} = '{response_value}'")
-                            elif not destination_column or not destination_column.strip():
-                                app.logger.warning(f"⚠️  Question {question_id} has no destination column configured")
-                            elif not response_value or not str(response_value).strip():
-                                app.logger.warning(f"Question {question_id} has empty response value: '{response_value}'")
+                                if response_str.lower() == "yes":
+                                    response_str = "Sim"
+                                elif response_str.lower() == "no":
+                                    response_str = "Não"
+                                
+                                # Check if we have a destination column
+                                if destination_column and destination_column.strip():
+                                    updates_to_process.append({
+                                        'column_id': destination_column.strip(),
+                                        'value': response_str,
+                                        'description': f"Question {question_id} ({question_type}) response: {question_text}"
+                                    })
+                                    app.logger.info(f"✅ Added to updates: {question_id} -> {destination_column} = '{response_str}'")
+                                else:
+                                    app.logger.warning(f"⚠️  Question {question_id} has no destination column configured")
+                            else:
+                                app.logger.warning(f"Question {question_id} has empty response value after processing")
                         else:
-                            app.logger.warning(f"Question {question_id} was not found in form submission data")
+                            app.logger.warning(f"❌ Question {question_id} was not found in form submission data")
+                            app.logger.info(f"Available fields: {list(submission_data.keys())}")
 
                         # For Monday column questions, also save the column value (question text)
                         if question_type == 'monday_column' and question_destination_column and question_destination_column.strip():
                             column_value = question.get('column_value', '')
                             if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
                                 updates_to_process.append({
-                                    'column_id': question_destination_column,
+                                    'column_id': question_destination_column.strip(),
                                     'value': column_value,
                                     'description': f"Monday column question {question_id} text"
                                 })
+                                app.logger.info(f"✅ Added Monday column value: {question_id} -> {question_destination_column} = '{column_value}'")
 
                     # Process all updates
                     app.logger.info(f"Processing - Processing {len(updates_to_process)} column updates")
@@ -322,10 +340,22 @@ def submit_form(form_id):
 
         # Process form submission
         submission_data = request.form.to_dict()
-        app.logger.info(f"Form {form_id} submitted with data: {submission_data}")
+        app.logger.info(f"=== FORM SUBMISSION START ===")
+        app.logger.info(f"Form {form_id} submitted with {len(submission_data)} fields")
         app.logger.info(f"Form type: {stored_form_data.get('type')}")
         app.logger.info(f"Header data: {stored_form_data.get('header_data')}")
         app.logger.info(f"Total questions in form: {len(stored_form_data.get('questions', []))}")
+        
+        # Log all submission data
+        app.logger.info(f"Submission data:")
+        for key, value in submission_data.items():
+            app.logger.info(f"  {key}: '{value}'")
+        
+        # Log all questions and their destination columns
+        app.logger.info(f"Questions with destination columns:")
+        for i, question in enumerate(stored_form_data.get('questions', [])):
+            if question.get('type') != 'divider':
+                app.logger.info(f"  Q{i+1}: ID={question.get('id')}, Type={question.get('type')}, DestCol='{question.get('destination_column', '')}', Text='{question.get('text', '')[:50]}...'")
 
         # Start background processing
         background_thread = threading.Thread(
@@ -336,6 +366,7 @@ def submit_form(form_id):
         background_thread.start()
 
         app.logger.info(f"Form {form_id} submitted successfully, processing in background")
+        app.logger.info(f"=== FORM SUBMISSION END ===")
 
         # Return success page immediately
         return render_template('success.html')
