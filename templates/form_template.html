@@ -250,7 +250,12 @@
 
             // Check if the current value matches the condition to show the question
             // If showIf is empty or undefined, default to showing when currentValue is "Sim"
-            const conditionToMatch = (showIf && showIf.trim() !== '') ? showIf : 'Sim';
+            let conditionToMatch;
+            if (!showIf || showIf.trim() === '') {
+                conditionToMatch = 'Sim';
+            } else {
+                conditionToMatch = showIf;
+            }
             const shouldShow = currentValue === conditionToMatch;
 
             if (shouldShow) {
