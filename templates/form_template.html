@@ -106,12 +106,12 @@
                         <label class="yes-no-label">{{ question.text }}</label>
                         <div class="yes-no-options">
                             <div class="yes-no-option">
-                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="yes" 
+                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="Sim" 
                                        {% if question.required %}required{% endif %}>
                                 <label for="{{ question.id }}_yes">Sim</label>
                             </div>
                             <div class="yes-no-option">
-                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="no" 
+                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="Não" 
                                        {% if question.required %}required{% endif %}>
                                 <label for="{{ question.id }}_no">Não</label>
                             </div>
