@@ -106,12 +106,12 @@
                         <label class="yes-no-label">{{ question.text }}</label>
                         <div class="yes-no-options">
                             <div class="yes-no-option">
-                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="Sim" 
+                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="yes" 
                                        {% if question.required %}required{% endif %}>
                                 <label for="{{ question.id }}_yes">Sim</label>
                             </div>
                             <div class="yes-no-option">
-                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="Não" 
+                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="no" 
                                        {% if question.required %}required{% endif %}>
                                 <label for="{{ question.id }}_no">Não</label>
                             </div>
@@ -249,10 +249,10 @@
             console.log('Toggle conditional:', currentValue, 'should show if:', showIf);
 
             // Check if the current value matches the condition to show the question
-            // If showIf is empty or undefined, default to showing when currentValue is "Sim"
+            // If showIf is empty or undefined, default to showing when currentValue is "yes"
             let conditionToMatch;
             if (!showIf || showIf.trim() === '') {
-                conditionToMatch = 'Sim';
+                conditionToMatch = 'yes';
             } else {
                 conditionToMatch = showIf;
             }
