@@ -220,57 +220,26 @@
                     const dependentInputs = document.querySelectorAll(`input[name="${dependsOn}"], select[name="${dependsOn}"]`);
 
                     dependentInputs.forEach(input => {
-                        // Listen for both change and click events for immediate response
-                        ['change', 'click'].forEach(eventType => {
-                            input.addEventListener(eventType, function() {
-                                if (input.type === 'radio' && input.checked) {
-                                    toggleConditionalQuestion(questionElement, this.value, showIf);
-                                } else if (input.type !== 'radio') {
-                                    toggleConditionalQuestion(questionElement, this.value, showIf);
-                                }
-                            });
+                        input.addEventListener('change', function() {
+                            toggleConditionalQuestion(questionElement, this.value, showIf);
                         });
 
-                        // Check initial state for pre-selected values
+                        // Check initial state
                         if (input.type === 'radio' && input.checked) {
                             toggleConditionalQuestion(questionElement, input.value, showIf);
                         } else if (input.type !== 'radio' && input.value) {
                             toggleConditionalQuestion(questionElement, input.value, showIf);
                         }
                     });
-
-                    // Initial state - hide all conditional questions that don't meet conditions
-                    questionElement.style.display = 'none';
                 }
             });
         }
 
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
-            console.log('Toggle conditional:', currentValue, 'should show if:', showIf);
-
-            // Check if the current value matches the condition to show the question
-            // If showIf is empty or undefined, default to showing when currentValue is "yes"
-            let conditionToMatch;
-            if (!showIf || showIf.trim() === '') {
-                conditionToMatch = 'yes';
-            } else {
-                conditionToMatch = showIf;
-            }
-            const shouldShow = currentValue === conditionToMatch;
+            const shouldShow = currentValue === showIf;
 
             if (shouldShow) {
                 questionElement.style.display = 'block';
-                questionElement.classList.add('show');
-
-                // Re-add required attributes to visible fields
-                const visibleInputs = questionElement.querySelectorAll('input, textarea, select');
-                visibleInputs.forEach(input => {
-                    if (input.hasAttribute('data-originally-required')) {
-                        input.setAttribute('required', '');
-                    }
-                });
-
-                // Add smooth animation
                 questionElement.style.opacity = '0';
                 questionElement.style.transform = 'translateY(-10px)';
                 setTimeout(() => {
@@ -280,163 +249,26 @@
                 }, 10);
             } else {
                 questionElement.style.display = 'none';
-                questionElement.classList.remove('show');
                 questionElement.style.opacity = '';
                 questionElement.style.transform = '';
                 questionElement.style.transition = '';
 
-                // Clear answers and remove required attributes from hidden questions
+                // Clear values from hidden questions
                 const hiddenInputs = questionElement.querySelectorAll('input, textarea, select');
                 hiddenInputs.forEach(hiddenInput => {
-                    // Store original required state
-                    if (hiddenInput.hasAttribute('required')) {
-                        hiddenInput.setAttribute('data-originally-required', '');
-                        hiddenInput.removeAttribute('required');
-                    }
-
                     if (hiddenInput.type === 'radio' || hiddenInput.type === 'checkbox') {
                         hiddenInput.checked = false;
                     } else if (hiddenInput.type !== 'hidden') {
                         hiddenInput.value = '';
                     }
-                    // Remove validation errors if any
-                    if (hiddenInput.style.border) {
-                        hiddenInput.style.border = '';
-                    }
                 });
             }
         }
 
-        // Form validation and submission
-        document.getElementById('surveyForm').addEventListener('submit', function(e) {
-            console.log('Form submission started');
-
-            // Disable submit button to prevent double submission
-            const submitButton = this.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i data-feather="loader" class="me-2"></i>Enviando...';
-                feather.replace();
-            }
-
-            const allRequiredInputs = document.querySelectorAll('input[required], select[required], textarea[required]');
-            let valid = true;
-            let invalidFields = [];
-
-            allRequiredInputs.forEach(input => {
-                // Only validate if the question is visible
-                const questionSection = input.closest('.question-section');
-
-                // Check if the element is actually visible to the user
-                const isVisible = questionSection && 
-                    questionSection.offsetParent !== null && // element is not hidden
-                    questionSection.style.display !== 'none' && 
-                    window.getComputedStyle(questionSection).display !== 'none' &&
-                    (!questionSection.hasAttribute('data-depends-on') ||
-                    (questionSection.hasAttribute('data-depends-on') && questionSection.classList.contains('show')));
-
-                if (isVisible) {
-                    let fieldValid = true;
-
-                    if (input.type === 'radio') {
-                        const radioGroup = document.querySelectorAll(`input[name="${input.name}"]:checked`);
-                        if (radioGroup.length === 0) {
-                            fieldValid = false;
-                            questionSection.style.border = '2px solid #ff4444';
-                            setTimeout(() => {
-                                questionSection.style.border = '';
-                            }, 3000);
-                        }
-                    } else if (input.type === 'hidden' && !input.value) {
-                        // For rating questions
-                        fieldValid = false;
-                        const ratingSection = input.closest('.rating-scale-small') || input.closest('.hotel-rating');
-                        if (ratingSection) {
-                            ratingSection.style.border = '2px solid #ff4444';
-                            setTimeout(() => {
-                                ratingSection.style.border = '';
-                            }, 3000);
-                        }
-                    } else if (input.type !== 'hidden' && !input.value.trim()) {
-                        fieldValid = false;
-                        input.style.border = '2px solid #ff4444';
-                        setTimeout(() => {
-                            input.style.border = '';
-                        }, 3000);
-                    }
-
-                    if (!fieldValid) {
-                        valid = false;
-                        invalidFields.push(input.name || input.id);
-                    }
-                } else {
-                    // Remove required attribute from hidden fields to prevent browser validation
-                    input.removeAttribute('required');
-                }
-            });
-
-            if (!valid) {
-                e.preventDefault();
-                console.log('Form validation failed for fields:', invalidFields);
-
-                // Re-enable submit button
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i data-feather="send" class="me-2"></i>Enviar Formulário';
-                    feather.replace();
-                }
-
-                alert('Por favor, responda todas as perguntas obrigatórias visíveis.');
-                return false;
-            }
-
-            console.log('Form validation passed, submitting form');
-
-            // Add a timeout to re-enable button in case of network issues
-            setTimeout(() => {
-                if (submitButton && submitButton.disabled) {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i data-feather="send" class="me-2"></i>Enviar Formulário';
-                    feather.replace();
-                }
-            }, 10000); // 10 seconds timeout
-        });
-
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Store original required states for all conditional questions
-            const conditionalQuestions = document.querySelectorAll('[data-depends-on]');
-            conditionalQuestions.forEach(questionElement => {
-                const inputs = questionElement.querySelectorAll('input, textarea, select');
-                inputs.forEach(input => {
-                    if (input.hasAttribute('required')) {
-                        input.setAttribute('data-originally-required', '');
-                        input.removeAttribute('required');
-                    }
-                });
-                // Hide conditional questions initially
-                questionElement.style.display = 'none';
-            });
-
             handleConditionalQuestions();
             feather.replace();
-
-            // Add debugging for form elements
-            console.log('Form initialized');
-            console.log('Form action:', document.getElementById('surveyForm').action);
-            console.log('Form method:', document.getElementById('surveyForm').method);
-
-            // Log all form inputs
-            const allInputs = document.querySelectorAll('input, select, textarea');
-            console.log('Total form inputs:', allInputs.length);
-            allInputs.forEach((input, index) => {
-                console.log(`Input ${index + 1}:`, {
-                    name: input.name,
-                    type: input.type,
-                    required: input.required,
-                    value: input.value
-                });
-            });
         });
     </script>
 </body>
