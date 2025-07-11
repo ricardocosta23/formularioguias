@@ -235,59 +235,66 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             app.logger.info(f"Skipping divider question {question_id}")
                             continue
 
-                        # Check if this question was answered in the form - try multiple possible field names
-                        response_value = None
-                        possible_field_names = [
-                            question_id,
-                            f"question_{question_id}",
-                            f"q_{question_id}",
-                            question_id.replace('question_', ''),
-                        ]
-
-                        for field_name in possible_field_names:
-                            if field_name in submission_data:
-                                response_value = submission_data[field_name]
-                                app.logger.info(f"Found answer for question {question_id} in field '{field_name}': '{response_value}'")
-                                break
-
-                        if response_value is not None:
-                            app.logger.info(f"Question {question_id} answered with: '{response_value}' (type: {type(response_value)})")
-
-                            # Convert values
-                            response_str = str(response_value).strip()
-                            if response_str:
-                                # Preserve Portuguese values - don't translate
+                        # For Monday column questions, save both the response and the column value
+                        if question_type == 'monday_column':
+                            # First, save the user's response (rating)
+                            response_value = submission_data.get(question_id)
+                            if response_value is not None and str(response_value).strip():
+                                response_str = str(response_value).strip()
+                                
+                                # Convert English to Portuguese
                                 if response_str.lower() == "yes":
                                     response_str = "Sim"
                                 elif response_str.lower() == "no":
                                     response_str = "Não"
 
-                                # Check if we have a destination column
                                 if destination_column and destination_column.strip():
                                     updates_to_process.append({
                                         'column_id': destination_column.strip(),
                                         'value': response_str,
-                                        'description': f"Question {question_id} ({question_type}) response: {question_text}"
+                                        'description': f"Monday column question {question_id} response: {response_str}"
                                     })
-                                    app.logger.info(f"✅ Added to updates: {question_id} -> {destination_column} = '{response_str}'")
-                                else:
-                                    app.logger.warning(f"⚠️  Question {question_id} has no destination column configured")
-                            else:
-                                app.logger.warning(f"Question {question_id} has empty response value after processing")
-                        else:
-                            app.logger.warning(f"❌ Question {question_id} was not found in form submission data")
-                            app.logger.info(f"Available fields: {list(submission_data.keys())}")
+                                    app.logger.info(f"✅ Added Monday column response: {question_id} -> {destination_column} = '{response_str}'")
 
-                        # For Monday column questions, also save the column value (question text)
-                        if question_type == 'monday_column' and question_destination_column and question_destination_column.strip():
-                            column_value = question.get('column_value', '')
-                            if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
-                                updates_to_process.append({
-                                    'column_id': question_destination_column.strip(),
-                                    'value': column_value,
-                                    'description': f"Monday column question {question_id} text"
-                                })
-                                app.logger.info(f"✅ Added Monday column value: {question_id} -> {question_destination_column} = '{column_value}'")
+                            # Second, save the column value (question text) if configured
+                            if question_destination_column and question_destination_column.strip():
+                                column_value = question.get('column_value', '')
+                                if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
+                                    updates_to_process.append({
+                                        'column_id': question_destination_column.strip(),
+                                        'value': column_value,
+                                        'description': f"Monday column question {question_id} text: {column_value}"
+                                    })
+                                    app.logger.info(f"✅ Added Monday column text: {question_id} -> {question_destination_column} = '{column_value}'")
+
+                        else:
+                            # For regular questions (yesno, rating, text, longtext, dropdown)
+                            response_value = submission_data.get(question_id)
+                            
+                            if response_value is not None:
+                                response_str = str(response_value).strip()
+                                
+                                if response_str:
+                                    # Convert English to Portuguese
+                                    if response_str.lower() == "yes":
+                                        response_str = "Sim"
+                                    elif response_str.lower() == "no":
+                                        response_str = "Não"
+
+                                    if destination_column and destination_column.strip():
+                                        updates_to_process.append({
+                                            'column_id': destination_column.strip(),
+                                            'value': response_str,
+                                            'description': f"Question {question_id} ({question_type}) response: {question_text}"
+                                        })
+                                        app.logger.info(f"✅ Added regular question: {question_id} -> {destination_column} = '{response_str}'")
+                                    else:
+                                        app.logger.warning(f"⚠️  Question {question_id} has no destination column configured")
+                                else:
+                                    app.logger.warning(f"Question {question_id} has empty response value")
+                            else:
+                                app.logger.warning(f"❌ Question {question_id} was not answered in form submission")
+                                app.logger.info(f"Available form fields: {list(submission_data.keys())}")
 
                     # Process all updates
                     app.logger.info(f"Processing - Processing {len(updates_to_process)} column updates")
