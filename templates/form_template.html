@@ -261,6 +261,15 @@
             if (shouldShow) {
                 questionElement.style.display = 'block';
                 questionElement.classList.add('show');
+                
+                // Re-add required attributes to visible fields
+                const visibleInputs = questionElement.querySelectorAll('input, textarea, select');
+                visibleInputs.forEach(input => {
+                    if (input.hasAttribute('data-originally-required')) {
+                        input.setAttribute('required', '');
+                    }
+                });
+                
                 // Add smooth animation
                 questionElement.style.opacity = '0';
                 questionElement.style.transform = 'translateY(-10px)';
@@ -276,9 +285,15 @@
                 questionElement.style.transform = '';
                 questionElement.style.transition = '';
 
-                // Clear answers in hidden questions
+                // Clear answers and remove required attributes from hidden questions
                 const hiddenInputs = questionElement.querySelectorAll('input, textarea, select');
                 hiddenInputs.forEach(hiddenInput => {
+                    // Store original required state
+                    if (hiddenInput.hasAttribute('required')) {
+                        hiddenInput.setAttribute('data-originally-required', '');
+                        hiddenInput.removeAttribute('required');
+                    }
+                    
                     if (hiddenInput.type === 'radio' || hiddenInput.type === 'checkbox') {
                         hiddenInput.checked = false;
                     } else if (hiddenInput.type !== 'hidden') {
@@ -311,8 +326,12 @@
             allRequiredInputs.forEach(input => {
                 // Only validate if the question is visible
                 const questionSection = input.closest('.question-section');
+                
+                // Check if the element is actually visible to the user
                 const isVisible = questionSection && 
+                    questionSection.offsetParent !== null && // element is not hidden
                     questionSection.style.display !== 'none' && 
+                    window.getComputedStyle(questionSection).display !== 'none' &&
                     (!questionSection.hasAttribute('data-depends-on') ||
                     (questionSection.hasAttribute('data-depends-on') && questionSection.classList.contains('show')));
 
@@ -350,6 +369,9 @@
                         valid = false;
                         invalidFields.push(input.name || input.id);
                     }
+                } else {
+                    // Remove required attribute from hidden fields to prevent browser validation
+                    input.removeAttribute('required');
                 }
             });
 
