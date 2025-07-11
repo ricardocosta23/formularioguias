@@ -249,8 +249,8 @@
             console.log('Toggle conditional:', currentValue, 'should show if:', showIf);
 
             // Check if the current value matches the condition to show the question
-            // If showIf is empty, default to showing when currentValue is "Sim"
-            const conditionToMatch = showIf || 'Sim';
+            // If showIf is empty or undefined, default to showing when currentValue is "Sim"
+            const conditionToMatch = (showIf && showIf.trim() !== '') ? showIf : 'Sim';
             const shouldShow = currentValue === conditionToMatch;
 
             if (shouldShow) {
@@ -297,8 +297,8 @@
                 const questionSection = input.closest('.question-section');
                 const isVisible = questionSection && 
                     questionSection.style.display !== 'none' && 
-                    !questionSection.hasAttribute('data-depends-on') ||
-                    (questionSection.hasAttribute('data-depends-on') && questionSection.classList.contains('show'));
+                    (!questionSection.hasAttribute('data-depends-on') ||
+                    (questionSection.hasAttribute('data-depends-on') && questionSection.classList.contains('show')));
 
                 if (isVisible) {
                     if (input.type === 'radio') {
