@@ -1,4 +1,3 @@
-
 import os
 import logging
 from flask import Flask, render_template, request, jsonify, redirect, url_for
@@ -53,7 +52,7 @@ def load_config():
                 return json.load(f)
     except:
         pass
-    
+
     # Try to load from environment variable for Vercel
     config_env = os.environ.get('FORMS_CONFIG')
     if config_env:
@@ -61,7 +60,7 @@ def load_config():
             return json.loads(config_env)
         except:
             pass
-    
+
     return CONFIG_STORAGE
 
 def save_config(config):
@@ -156,7 +155,7 @@ def process_form_background(form_id, submission_data, stored_form_data):
     """Background processing function for form submission"""
     try:
         app.logger.info(f"Background processing started for form {form_id}")
-        
+
         # Load configuration
         config = load_config()
         form_type = stored_form_data.get('type')
@@ -191,7 +190,7 @@ def process_form_background(form_id, submission_data, stored_form_data):
 
                     # Add header data to destination board
                     header_data = stored_form_data.get('header_data', {})
-                    
+
                     # Add other header fields to specific columns
                     if header_data.get('Destino'):
                         updates_to_process.append({
@@ -199,14 +198,14 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             'value': header_data['Destino'],
                             'description': f"Destino from header data"
                         })
-                    
+
                     if header_data.get('Data'):
                         updates_to_process.append({
                             'column_id': 'text_mksq2j87',
                             'value': header_data['Data'],
                             'description': f"Data from header data"
                         })
-                    
+
                     if header_data.get('Cliente'):
                         updates_to_process.append({
                             'column_id': 'text_mkrjdnry',
@@ -244,16 +243,16 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             f"q_{question_id}",
                             question_id.replace('question_', ''),
                         ]
-                        
+
                         for field_name in possible_field_names:
                             if field_name in submission_data:
                                 response_value = submission_data[field_name]
                                 app.logger.info(f"Found answer for question {question_id} in field '{field_name}': '{response_value}'")
                                 break
-                        
+
                         if response_value is not None:
                             app.logger.info(f"Question {question_id} answered with: '{response_value}' (type: {type(response_value)})")
-                            
+
                             # Convert values
                             response_str = str(response_value).strip()
                             if response_str:
@@ -262,7 +261,7 @@ def process_form_background(form_id, submission_data, stored_form_data):
                                     response_str = "Sim"
                                 elif response_str.lower() == "no":
                                     response_str = "Não"
-                                
+
                                 # Check if we have a destination column
                                 if destination_column and destination_column.strip():
                                     updates_to_process.append({
@@ -294,16 +293,16 @@ def process_form_background(form_id, submission_data, stored_form_data):
                     app.logger.info(f"Processing - Processing {len(updates_to_process)} column updates")
                     successful_updates = 0
                     failed_updates = 0
-                    
+
                     for update in updates_to_process:
                         try:
                             app.logger.info(f"Processing - {update['description']}: column={update['column_id']}, value={update['value']}")
-                            
+
                             # Skip empty values
                             if not update['value'] or str(update['value']).strip() == '':
                                 app.logger.warning(f"Skipping empty value for column {update['column_id']}")
                                 continue
-                            
+
                             monday_api.update_item_column(
                                 board_id=board_b,
                                 item_id=new_item_id,
@@ -315,7 +314,7 @@ def process_form_background(form_id, submission_data, stored_form_data):
                         except Exception as e:
                             app.logger.error(f"Processing - Failed to update column {update['column_id']}: {str(e)}")
                             failed_updates += 1
-                    
+
                     app.logger.info(f"Processing - Completed: {successful_updates} successful, {failed_updates} failed updates")
                     app.logger.info(f"Processing - Completed all updates for form {form_id}")
                 else:
@@ -345,12 +344,12 @@ def submit_form(form_id):
         app.logger.info(f"Form type: {stored_form_data.get('type')}")
         app.logger.info(f"Header data: {stored_form_data.get('header_data')}")
         app.logger.info(f"Total questions in form: {len(stored_form_data.get('questions', []))}")
-        
+
         # Log all submission data
         app.logger.info(f"Submission data:")
         for key, value in submission_data.items():
             app.logger.info(f"  {key}: '{value}'")
-        
+
         # Log all questions and their destination columns
         app.logger.info(f"Questions with destination columns:")
         for i, question in enumerate(stored_form_data.get('questions', [])):
