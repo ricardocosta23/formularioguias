@@ -10,7 +10,7 @@ class AdminInterface {
     init() {
         this.loadConfiguration();
         this.setupEventListeners();
-        this.showTab('clientes');
+        this.showTab('guias');
     }
 
     setupEventListeners() {
