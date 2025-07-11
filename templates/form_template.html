@@ -230,9 +230,16 @@
                                 }
                             });
                         });
+
+                        // Check initial state for pre-selected values
+                        if (input.type === 'radio' && input.checked) {
+                            toggleConditionalQuestion(questionElement, input.value, showIf);
+                        } else if (input.type !== 'radio' && input.value) {
+                            toggleConditionalQuestion(questionElement, input.value, showIf);
+                        }
                     });
 
-                    // Initial state - hide all conditional questions
+                    // Initial state - hide all conditional questions that don't meet conditions
                     questionElement.style.display = 'none';
                 }
             });
@@ -242,7 +249,9 @@
             console.log('Toggle conditional:', currentValue, 'should show if:', showIf);
 
             // Check if the current value matches the condition to show the question
-            const shouldShow = currentValue === showIf;
+            // If showIf is empty, default to showing when currentValue is "Sim"
+            const conditionToMatch = showIf || 'Sim';
+            const shouldShow = currentValue === conditionToMatch;
 
             if (shouldShow) {
                 questionElement.style.display = 'block';
