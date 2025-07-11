@@ -292,10 +292,21 @@
             }
         }
 
-        // Form validation
+        // Form validation and submission
         document.getElementById('surveyForm').addEventListener('submit', function(e) {
+            console.log('Form submission started');
+            
+            // Disable submit button to prevent double submission
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i data-feather="loader" class="me-2"></i>Enviando...';
+                feather.replace();
+            }
+
             const allRequiredInputs = document.querySelectorAll('input[required], select[required], textarea[required]');
             let valid = true;
+            let invalidFields = [];
 
             allRequiredInputs.forEach(input => {
                 // Only validate if the question is visible
@@ -306,10 +317,12 @@
                     (questionSection.hasAttribute('data-depends-on') && questionSection.classList.contains('show')));
 
                 if (isVisible) {
+                    let fieldValid = true;
+                    
                     if (input.type === 'radio') {
                         const radioGroup = document.querySelectorAll(`input[name="${input.name}"]:checked`);
                         if (radioGroup.length === 0) {
-                            valid = false;
+                            fieldValid = false;
                             questionSection.style.border = '2px solid #ff4444';
                             setTimeout(() => {
                                 questionSection.style.border = '';
@@ -317,7 +330,7 @@
                         }
                     } else if (input.type === 'hidden' && !input.value) {
                         // For rating questions
-                        valid = false;
+                        fieldValid = false;
                         const ratingSection = input.closest('.rating-scale-small') || input.closest('.hotel-rating');
                         if (ratingSection) {
                             ratingSection.style.border = '2px solid #ff4444';
@@ -325,26 +338,69 @@
                                 ratingSection.style.border = '';
                             }, 3000);
                         }
-                    } else if (!input.value.trim()) {
-                        valid = false;
+                    } else if (input.type !== 'hidden' && !input.value.trim()) {
+                        fieldValid = false;
                         input.style.border = '2px solid #ff4444';
                         setTimeout(() => {
                             input.style.border = '';
                         }, 3000);
+                    }
+
+                    if (!fieldValid) {
+                        valid = false;
+                        invalidFields.push(input.name || input.id);
                     }
                 }
             });
 
             if (!valid) {
                 e.preventDefault();
+                console.log('Form validation failed for fields:', invalidFields);
+                
+                // Re-enable submit button
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i data-feather="send" class="me-2"></i>Enviar Formulário';
+                    feather.replace();
+                }
+                
                 alert('Por favor, responda todas as perguntas obrigatórias visíveis.');
+                return false;
             }
+
+            console.log('Form validation passed, submitting form');
+            
+            // Add a timeout to re-enable button in case of network issues
+            setTimeout(() => {
+                if (submitButton && submitButton.disabled) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i data-feather="send" class="me-2"></i>Enviar Formulário';
+                    feather.replace();
+                }
+            }, 10000); // 10 seconds timeout
         });
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             handleConditionalQuestions();
             feather.replace();
+            
+            // Add debugging for form elements
+            console.log('Form initialized');
+            console.log('Form action:', document.getElementById('surveyForm').action);
+            console.log('Form method:', document.getElementById('surveyForm').method);
+            
+            // Log all form inputs
+            const allInputs = document.querySelectorAll('input, select, textarea');
+            console.log('Total form inputs:', allInputs.length);
+            allInputs.forEach((input, index) => {
+                console.log(`Input ${index + 1}:`, {
+                    name: input.name,
+                    type: input.type,
+                    required: input.required,
+                    value: input.value
+                });
+            });
         });
     </script>
 </body>
