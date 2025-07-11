@@ -404,8 +404,39 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Store original required states for all conditional questions
+            const conditionalQuestions = document.querySelectorAll('[data-depends-on]');
+            conditionalQuestions.forEach(questionElement => {
+                const inputs = questionElement.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    if (input.hasAttribute('required')) {
+                        input.setAttribute('data-originally-required', '');
+                        input.removeAttribute('required');
+                    }
+                });
+                // Hide conditional questions initially
+                questionElement.style.display = 'none';
+            });
+
             handleConditionalQuestions();
             feather.replace();
+
+            // Add debugging for form elements
+            console.log('Form initialized');
+            console.log('Form action:', document.getElementById('surveyForm').action);
+            console.log('Form method:', document.getElementById('surveyForm').method);
+
+            // Log all form inputs
+            const allInputs = document.querySelectorAll('input, select, textarea');
+            console.log('Total form inputs:', allInputs.length);
+            allInputs.forEach((input, index) => {
+                console.log(`Input ${index + 1}:`, {
+                    name: input.name,
+                    type: input.type,
+                    required: input.required,
+                    value: input.value
+                });
+            });
         });
     </script>
 </body>
