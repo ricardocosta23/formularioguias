@@ -336,7 +336,7 @@ class AdminInterface {
                 if (conditionalDiv) {
                     conditionalDiv.style.display = this.value === 'yesno' ? 'block' : 'none';
                 }
-                
+
                 // Handle question destination column for Monday column type
                 const questionDestinoRow = document.getElementById(`question-destino-row-${formType}-${index}`);
                 if (questionDestinoRow) {
@@ -835,6 +835,7 @@ class AdminInterface {
 
         div.innerHTML = `
             <div class="card h-100">
+                ```text
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="badge bg-${typeColor}">${form.type}</span>
@@ -974,7 +975,7 @@ class AdminInterface {
                         if (sourceColumnInput) {
                             question.source_column = sourceColumnInput.value;
                         }
-                        
+
                         const questionDestinationColumnInput = item.querySelector('input[data-path*=".question_destination_column"]');
                         if (questionDestinationColumnInput) {
                             question.question_destination_column = questionDestinationColumnInput.value;
@@ -991,6 +992,51 @@ class AdminInterface {
             });
 
         this.config[formType].questions = allItems;
+    }
+
+    async saveConfiguration() {
+        try {
+            // Update basic config from inputs
+            ['guias', 'clientes', 'fornecedores'].forEach(formType => {
+                if (!this.config[formType]) this.config[formType] = {};
+
+                const boardA = document.getElementById(`${formType}-board-a`);
+                const boardB = document.getElementById(`${formType}-board-b`);
+                const linkColumn = document.getElementById(`${formType}-link-column`);
+
+                if (boardA) this.config[formType].board_a = boardA.value;
+                if (boardB) this.config[formType].board_b = boardB.value;
+                if (linkColumn) this.config[formType].link_column = linkColumn.value;
+
+                // Update questions title
+                const questionsTitle = document.getElementById(`${formType}-questions-title`);
+                if (questionsTitle) this.config[formType].questions_title = questionsTitle.value;
+            });
+
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(this.config)
+            });
+
+            if (response.ok) {
+                // Reload configuration after saving
+                const reloadResponse = await fetch('/api/reload_config', { method: 'POST' });
+		if (reloadResponse.ok) {
+                    this.showNotification('Configuração salva e recarregada com sucesso!', 'success');
+                } else {
+                    this.showNotification('Configuração salva, mas erro ao recarregar!', 'warning');
+                }
+
+            } else {
+                throw new Error('Failed to save configuration');
+            }
+        } catch (error) {
+            console.error('Error saving configuration:', error);
+            this.showNotification('Erro ao salvar configuração', 'error');
+        }
     }
 }
 
