@@ -143,7 +143,7 @@
                     {% if question.column_value and question.column_value != 'Dados não encontrados' and question.column_value != 'Erro ao carregar dados' and question.column_value != 'Dados não disponíveis' and question.column_value != 'Configuração incompleta' and question.column_value.strip() != '' %}
                     <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="{{ question.conditional.show_if or 'yes' }}" style="display: none;" {% endif %}>
                         <div class="hotel-rating">
-                            <label class="rating-label">{{ question.column_value }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
+                            <label class="rating-label">{{ question.column_value }}</label>
                             <div class="rating-scale-small">
                                 <div class="rating-numbers">
                                     {% for i in range(1, 11) %}
@@ -166,7 +166,7 @@
                 <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="{{ question.conditional.show_if or 'yes' }}" style="display: none;" {% endif %}>
                     {% if question.type == 'yesno' %}
                     <div class="yes-no-question">
-                        <label class="yes-no-label">{{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
+                        <label class="yes-no-label">{{ question.text }}</label>
                         <div class="yes-no-options">
                             <label class="yes-no-option" for="{{ question.id }}_yes">
                                 <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="yes" 
@@ -183,7 +183,7 @@
 
                     {% elif question.type == 'rating' %}
                     <div class="hotel-rating">
-                        <label class="rating-label">{{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
+                        <label class="rating-label">{{ question.text }}</label>
                         <div class="rating-scale-small">
                             <div class="rating-numbers">
                                 {% for i in range(1, 11) %}
@@ -200,7 +200,7 @@
                     {% elif question.type == 'text' %}
                     <label for="{{ question.id }}" class="feedback-label">
                         <i data-feather="edit-3"></i>
-                        {{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}
+                        {{ question.text }}
                     </label>
                     <input type="text" id="{{ question.id }}" name="{{ question.id }}" 
                            class="form-control" {% if question.required %}required{% endif %}
@@ -209,7 +209,7 @@
                     {% elif question.type == 'longtext' %}
                     <label for="{{ question.id }}" class="feedback-label">
                         <i data-feather="message-square"></i>
-                        {{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}
+                        {{ question.text }}
                     </label>
                     <textarea id="{{ question.id }}" name="{{ question.id }}" 
                               class="feedback-textarea" rows="4" {% if question.required %}required{% endif %}
@@ -218,7 +218,7 @@
                     {% elif question.type == 'dropdown' %}
                     <label for="{{ question.id }}" class="feedback-label">
                         <i data-feather="list"></i>
-                        {{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}
+                        {{ question.text }}
                     </label>
                     <select id="{{ question.id }}" name="{{ question.id }}" 
                             class="form-control" {% if question.required %}required{% endif %}
