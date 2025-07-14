@@ -475,6 +475,7 @@
         "source": "manual",
         "source_column": "dropdown_mksdfja5",
         "text_destination_column": "text_mksdf2av",
+        "rating_destination_column": "numeric_mkrj6132",
         "is_conditional": false
       },
       {
@@ -485,6 +486,7 @@
         "source": "manual",
         "source_column": "dropdown_mksds964",
         "text_destination_column": "numeric_mksdsjte",
+        "rating_destination_column": "",
         "is_conditional": false
       },
       {
@@ -495,6 +497,7 @@
         "source": "manual",
         "source_column": "dropdown_mksdhq4q",
         "text_destination_column": "numeric_mksdyxw2",
+        "rating_destination_column": "",
         "is_conditional": false
       },
       {
@@ -505,6 +508,7 @@
         "source": "manual",
         "source_column": "dropdown_mksdspz0",
         "text_destination_column": "numeric_mksdy42p",
+        "rating_destination_column": "",
         "is_conditional": false
       },
       {
