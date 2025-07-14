@@ -54,10 +54,10 @@ class FormGenerator:
             if 'conditional' in question and question['conditional']:
                 # Ensure the conditional structure is correct
                 conditional = question['conditional']
-                if conditional.get('depends_on') and conditional.get('show_if'):
+                if conditional.get('depends_on'):
                     processed_question['conditional'] = {
                         'depends_on': conditional['depends_on'],
-                        'show_if': conditional['show_if']
+                        'show_if': conditional.get('show_if', '')  # Allow empty show_if
                     }
                     processed_question['is_conditional'] = True
                 else:
