@@ -17,7 +17,8 @@ class AdminInterface {
         // Tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
+                // Get the tab name from the button itself, not the clicked element
+                const tabName = button.dataset.tab;
                 this.showTab(tabName);
             });
         });
