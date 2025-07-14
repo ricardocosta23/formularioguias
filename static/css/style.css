@@ -57,12 +57,12 @@ body.form-guias {
 }
 
 body.form-clientes {
-    background: linear-gradient(135deg, rgba(139, 201, 186, 0.8) 0%, rgba(139, 201, 186, 0.6) 100%),
+    background: linear-gradient(135deg, rgba(138, 43, 226, 0.8) 0%, rgba(138, 43, 226, 0.6) 100%),
                 url('../images/fundo.png') center/cover no-repeat fixed;
 }
 
 body.form-fornecedores {
-    background: linear-gradient(135deg, rgba(139, 201, 186, 0.8) 0%, rgba(139, 201, 186, 0.6) 100%),
+    background: linear-gradient(135deg, rgba(30, 144, 255, 0.8) 0%, rgba(30, 144, 255, 0.6) 100%),
                 url('../images/fundo.png') center/cover no-repeat fixed;
 }
 
@@ -140,6 +140,19 @@ body.form-fornecedores {
     animation: pulse 2s infinite;
 }
 
+/* Form-specific icon colors */
+body.form-clientes .icon-wrapper {
+    background: linear-gradient(135deg, 
+        rgba(138, 43, 226, 1) 0%, 
+        rgba(138, 43, 226, 0.8) 100%);
+}
+
+body.form-fornecedores .icon-wrapper {
+    background: linear-gradient(135deg, 
+        rgba(30, 144, 255, 1) 0%, 
+        rgba(30, 144, 255, 0.8) 100%);
+}
+
 @keyframes pulse {
     0%, 100% {
         transform: scale(1);
@@ -187,6 +200,15 @@ body.form-fornecedores {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+}
+
+/* Form-specific question title colors */
+body.form-clientes .question-title {
+    color: rgba(138, 43, 226, 1);
+}
+
+body.form-fornecedores .question-title {
+    color: rgba(30, 144, 255, 1);
 }
 
 /* Yes/No Questions */
@@ -280,6 +302,29 @@ body.form-fornecedores {
     box-shadow: var(--shadow-lg);
 }
 
+/* Form-specific rating circle colors */
+body.form-clientes .rating-circle.selected {
+    background: linear-gradient(135deg, rgba(138, 43, 226, 1) 0%, rgba(138, 43, 226, 0.8) 100%);
+    border-color: rgba(138, 43, 226, 1);
+}
+
+body.form-clientes .rating-circle:hover,
+body.form-clientes .rating-circle.hover {
+    border-color: rgba(138, 43, 226, 1);
+    background: rgba(138, 43, 226, 0.1);
+}
+
+body.form-fornecedores .rating-circle.selected {
+    background: linear-gradient(135deg, rgba(30, 144, 255, 1) 0%, rgba(30, 144, 255, 0.8) 100%);
+    border-color: rgba(30, 144, 255, 1);
+}
+
+body.form-fornecedores .rating-circle:hover,
+body.form-fornecedores .rating-circle.hover {
+    border-color: rgba(30, 144, 255, 1);
+    background: rgba(30, 144, 255, 0.1);
+}
+
 /* Rating Labels */
 .rating-label {
     display: block;
@@ -340,6 +385,15 @@ body.form-fornecedores {
     cursor: pointer;
     transition: all var(--transition-fast);
     box-shadow: var(--shadow-lg);
+}
+
+/* Form-specific button colors */
+body.form-clientes .submit-button {
+    background: linear-gradient(135deg, rgba(138, 43, 226, 1) 0%, rgba(138, 43, 226, 0.8) 100%);
+}
+
+body.form-fornecedores .submit-button {
+    background: linear-gradient(135deg, rgba(30, 144, 255, 1) 0%, rgba(30, 144, 255, 0.8) 100%);
 }
 
 .submit-button:hover {
