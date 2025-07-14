@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 import json
@@ -75,14 +76,20 @@ def load_config():
 
 def save_config(config):
     """Save configuration (in development only)"""
+    global config_cache, config_last_modified
     try:
         if not os.environ.get('VERCEL'):  # Only save in development
             os.makedirs('setup', exist_ok=True)
             with open('setup/config.json', 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
+            # Update cache after successful save
+            config_cache = config.copy()
+            config_last_modified = time.time()
         else:
-            # In production, log that config should be set via environment
-            app.logger.info("Production environment: Configuration should be set via FORMS_CONFIG environment variable")
+            # In production, update the cache but warn about persistence
+            config_cache = config.copy()
+            config_last_modified = time.time()
+            app.logger.warning("Production environment: Configuration saved to memory only. Changes will not persist across deployments.")
     except Exception as e:
         app.logger.error(f"Error saving configuration: {str(e)}")
 
@@ -113,7 +120,14 @@ def config_api():
         try:
             config = request.get_json()
             save_config(config)
-            return jsonify({"message": "Configuration saved successfully"})
+            
+            if os.environ.get('VERCEL'):
+                return jsonify({
+                    "message": "Configuration saved to memory only. Changes will not persist across deployments.",
+                    "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy."
+                })
+            else:
+                return jsonify({"message": "Configuration saved successfully"})
         except Exception as e:
             app.logger.error(f"Error saving configuration: {str(e)}")
             return jsonify({"error": "Failed to save configuration"}), 500
