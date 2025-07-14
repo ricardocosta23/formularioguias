@@ -350,6 +350,8 @@ function saveConfiguration() {
         fornecedores: extractFormConfig('fornecedores')
     };
 
+    console.log('Saving configuration:', config);
+
     fetch('/api/config', {
         method: 'POST',
         headers: {
@@ -359,18 +361,25 @@ function saveConfiguration() {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Save response:', data);
         if (data.error) {
             alert('Erro ao salvar configuração: ' + data.error);
-        } else {
-            alert('Configuração salva com sucesso!');
+        } else if (data.success) {
+            alert(data.message || 'Configuração salva com sucesso!');
             if (data.warning) {
                 alert('Aviso: ' + data.warning);
             }
+            // Reload configuration to confirm changes were saved
+            loadConfiguration();
+        } else {
+            alert('Configuração salva com sucesso!');
+            // Reload configuration to confirm changes were saved
+            loadConfiguration();
         }
     })
     .catch(error => {
         console.error('Error saving configuration:', error);
-        alert('Erro ao salvar configuração');
+        alert('Erro ao salvar configuração: ' + error.message);
     });
 }
 
