@@ -17,7 +17,7 @@ from api.formfornecedores import formfornecedores_bp
 # Configure logging for Vercel
 logging.basicConfig(level=logging.INFO)
 
-# Create Flask app
+# Create Flask app.
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "fallback-secret-key-for-development")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
