@@ -163,7 +163,7 @@
                         </div>
                         {% endif %}
                     </div>
-                    {% endif %}</old_str>
+                    {% endif %}
                 {% else %}
                 <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="{{ question.conditional.show_if or 'yes' }}" style="display: none;" {% endif %}>
                     {% if question.type == 'yesno' %}
@@ -236,13 +236,13 @@
                     </select>
 
                     {% endif %}
-                    
+
                     <!-- Error message for ALL question types when required -->
                     {% if question.required %}
                     <div class="error-message" id="error-{{ question.id }}" style="display: none;">
                         <small class="text-danger">* Resposta obrigatória!</small>
                     </div>
-                    {% endif %}</old_str>
+                    {% endif %}
                 </div>
                 {% endif %}
                 {% endif %}
@@ -354,7 +354,7 @@
         function enableDebugMode() {
             window.formDebugMode = true;
             console.log('🔍 FORM DEBUG MODE ENABLED');
-            
+
             // Add visual indicator
             const debugIndicator = document.createElement('div');
             debugIndicator.id = 'debug-indicator';
@@ -383,21 +383,21 @@
         function analyzeFormStructure() {
             console.log('📊 FORM STRUCTURE ANALYSIS');
             console.log('==========================');
-            
+
             // Analyze all question sections
             const questionSections = document.querySelectorAll('.question-section');
             console.log(`Found ${questionSections.length} question sections`);
-            
+
             questionSections.forEach((section, index) => {
                 console.log(`\n--- Section ${index + 1} ---`);
                 console.log('Section element:', section);
                 console.log('Display style:', window.getComputedStyle(section).display);
                 console.log('Is visible:', section.offsetHeight > 0);
-                
+
                 // Check for inputs in this section
                 const inputs = section.querySelectorAll('input, textarea, select');
                 console.log(`Inputs found: ${inputs.length}`);
-                
+
                 inputs.forEach((input, inputIndex) => {
                     console.log(`  Input ${inputIndex + 1}:`, {
                         type: input.type,
@@ -408,7 +408,7 @@
                         checked: input.checked
                     });
                 });
-                
+
                 // Check for error div
                 const errorDiv = section.querySelector('.error-message');
                 if (errorDiv) {
@@ -422,7 +422,7 @@
                     console.log('❌ No error div found in this section');
                 }
             });
-            
+
             // Analyze all error divs
             const allErrorDivs = document.querySelectorAll('.error-message');
             console.log(`\n📋 ALL ERROR DIVS (${allErrorDivs.length})`);
@@ -439,15 +439,15 @@
         function testErrorMessages() {
             console.log('🧪 TESTING ERROR MESSAGES');
             console.log('=========================');
-            
+
             const errorDivs = document.querySelectorAll('.error-message');
             console.log(`Found ${errorDivs.length} error divs`);
-            
+
             if (errorDivs.length === 0) {
                 console.error('❌ NO ERROR DIVS FOUND! This is the problem.');
                 return;
             }
-            
+
             errorDivs.forEach((div, index) => {
                 console.log(`Testing error div ${index + 1}:`, div.id);
                 div.style.display = 'block';
@@ -459,69 +459,69 @@
         function testFormValidation() {
             console.log('🔬 TESTING FORM VALIDATION');
             console.log('===========================');
-            
+
             // Simulate form submission validation
             const visibleQuestionSections = Array.from(document.querySelectorAll('.question-section')).filter(section => {
                 return section.style.display !== 'none';
             });
-            
+
             console.log(`Found ${visibleQuestionSections.length} visible question sections`);
-            
+
             visibleQuestionSections.forEach((section, index) => {
                 console.log(`\n--- Validating Section ${index + 1} ---`);
-                
+
                 let sectionHasError = false;
                 let questionId = null;
-                
+
                 // Check radio buttons
                 const radioButtons = section.querySelectorAll('input[type="radio"][required]');
                 if (radioButtons.length > 0) {
                     const radioName = radioButtons[0].name;
                     const isChecked = Array.from(radioButtons).some(radio => radio.checked);
                     console.log(`Radio group "${radioName}": ${isChecked ? 'VALID' : 'INVALID'}`);
-                    
+
                     if (!isChecked) {
                         sectionHasError = true;
                         questionId = radioName;
                     }
                 }
-                
+
                 // Check hidden inputs (ratings)
                 const ratingInput = section.querySelector('input[type="hidden"][required]');
                 if (ratingInput && !sectionHasError) {
                     const isEmpty = !ratingInput.value || ratingInput.value.trim() === '';
                     console.log(`Rating input "${ratingInput.name}": ${isEmpty ? 'INVALID' : 'VALID'} (value: "${ratingInput.value}")`);
-                    
+
                     if (isEmpty) {
                         sectionHasError = true;
                         questionId = ratingInput.name.replace('_input', '');
                     }
                 }
-                
+
                 // Check text fields
                 const textFields = section.querySelectorAll('input[type="text"][required], textarea[required], select[required]');
                 textFields.forEach(field => {
                     if (!sectionHasError) {
                         const isEmpty = !field.value || field.value.trim() === '';
                         console.log(`Text field "${field.name}": ${isEmpty ? 'INVALID' : 'VALID'} (value: "${field.value}")`);
-                        
+
                         if (isEmpty) {
                             sectionHasError = true;
                             questionId = field.name || field.id;
                         }
                     }
                 });
-                
+
                 if (sectionHasError) {
                     console.log(`❌ Section ${index + 1} has validation error for question: ${questionId}`);
-                    
+
                     // Try to find and show error message
                     const errorDivId = 'error-' + questionId;
                     const errorDiv = document.getElementById(errorDivId);
-                    
+
                     console.log(`Looking for error div: ${errorDivId}`);
                     console.log(`Found error div:`, errorDiv);
-                    
+
                     if (errorDiv) {
                         errorDiv.style.display = 'block';
                         errorDiv.classList.add('show');
@@ -545,15 +545,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             handleConditionalQuestions();
             feather.replace();
-            
+
             // Log for debugging
             console.log('🎯 PAGE LOADED - FORM INITIALIZATION');
             console.log('====================================');
             console.log('Found error divs:', document.querySelectorAll('.error-message').length);
-            
+
             // Auto-enable debug mode (remove this line in production)
             enableDebugMode();
-            
+
             // Log initial form structure
             setTimeout(analyzeFormStructure, 1000);
 
@@ -605,14 +605,14 @@
                     if (yesNoRadios.length > 0) {
                         const radioName = yesNoRadios[0].name;
                         console.log('Found radio group:', radioName);
-                        
+
                         // Skip if we already processed this radio group
                         if (processedRadioGroups.has(radioName)) {
                             console.log('Already processed radio group:', radioName);
                             return;
                         }
                         processedRadioGroups.add(radioName);
-                        
+
                         const isChecked = Array.from(yesNoRadios).some(radio => radio.checked);
                         if (!isChecked) {
                             sectionHasError = true;
@@ -649,21 +649,21 @@
                     // If this section has an error, mark it and show error message
                     if (sectionHasError && questionId) {
                         hasValidationErrors = true;
-                        
+
                         console.log('🚨 VALIDATION ERROR DETECTED');
                         console.log('Question ID:', questionId);
                         console.log('Section:', questionSection);
-                        
+
                         logDebug('Showing error for question ID', questionId);
-                        
+
                         // Try to find error div with debug logging
                         const errorDivId = 'error-' + questionId;
                         console.log('Looking for error div with ID:', errorDivId);
                         logDebug('Error div ID', errorDivId);
-                        
+
                         const errorDiv = document.getElementById(errorDivId);
                         console.log('Found error div:', errorDiv);
-                        
+
                         if (errorDiv) {
                             console.log('✅ Error div found, displaying...');
                             errorDiv.style.display = 'block';
@@ -679,14 +679,14 @@
                             logDebug('Error message displayed successfully', questionId);
                         } else {
                             console.error('❌ Error div not found for question ID:', questionId);
-                            
+
                             // Fallback: create and show error message directly in the section
                             // First, remove any existing fallback errors to avoid duplicates
                             const existingFallback = questionSection.querySelector('.fallback-error-message');
                             if (existingFallback) {
                                 existingFallback.remove();
                             }
-                            
+
                             const fallbackError = document.createElement('div');
                             fallbackError.className = 'error-message show fallback-error-message';
                             fallbackError.id = 'fallback-error-' + questionId;
@@ -706,8 +706,8 @@
                             questionSection.appendChild(fallbackError);
                             console.log('✅ Created fallback error message for:', questionId);
                             logDebug('Fallback error created', questionId);
-                        }</old_str>
-                        
+                        }
+
                         // Set first invalid field for scrolling
                         if (!firstInvalidField) {
                             firstInvalidField = questionSection;
@@ -719,7 +719,7 @@
                     if (firstInvalidField) {
                         // Scroll to the first invalid field
                         firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
+
                         // Try to focus on the first input in the section
                         const firstInput = firstInvalidField.querySelector('input, textarea, select');
                         if (firstInput && firstInput.focus) {
