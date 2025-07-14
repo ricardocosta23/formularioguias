@@ -53,6 +53,12 @@ function initializeEventListeners() {
         saveConfigBtn.addEventListener('click', saveConfiguration);
     }
 
+    // Generate config.json button
+    const generateConfigJsonBtn = document.getElementById('generateConfigJson');
+    if (generateConfigJsonBtn) {
+        generateConfigJsonBtn.addEventListener('click', generateConfigJson);
+    }
+
     // Add question button
     const addQuestionBtn = document.getElementById('addQuestionBtn');
     if (addQuestionBtn) {
@@ -508,6 +514,75 @@ function deleteForm(formId) {
             alert('Erro ao excluir formulário');
         });
     }
+}
+
+function generateConfigJson() {
+    const config = {
+        guias: extractFormConfig('guias'),
+        clientes: extractFormConfig('clientes'),
+        fornecedores: extractFormConfig('fornecedores')
+    };
+
+    const jsonString = JSON.stringify(config, null, 2);
+
+    // Try to copy to clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(jsonString).then(() => {
+            alert('config.json copiado para área de transferência!');
+        }).catch(err => {
+            console.error('Erro ao copiar para área de transferência:', err);
+            fallbackCopyToClipboard(jsonString);
+        });
+    } else {
+        fallbackCopyToClipboard(jsonString);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    // Fallback method for copying to clipboard
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        alert('config.json copiado para área de transferência!');
+    } catch (err) {
+        console.error('Erro ao copiar:', err);
+        // Show the JSON in a modal/alert as last resort
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            max-width: 80vw;
+            max-height: 80vh;
+            overflow: auto;
+            z-index: 9999;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+        
+        modal.innerHTML = `
+            <h3>Copie o JSON abaixo:</h3>
+            <textarea readonly style="width: 100%; height: 400px; font-family: monospace; font-size: 12px;">${text}</textarea>
+            <br><br>
+            <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Fechar</button>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    document.body.removeChild(textArea);
 }
 
 function switchTab(tabName) {
