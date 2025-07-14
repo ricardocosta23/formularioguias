@@ -278,7 +278,7 @@
         // Handle conditional questions
         function handleConditionalQuestions() {
             const conditionalQuestions = document.querySelectorAll('[data-depends-on]');
-            
+
             console.log('🔄 Initializing conditional questions:', conditionalQuestions.length);
 
             conditionalQuestions.forEach((questionElement, index) => {
@@ -289,7 +289,7 @@
 
                 // ALWAYS start hidden
                 questionElement.style.display = 'none';
-                
+
                 // Remove required attributes initially for all hidden questions
                 const hiddenInputs = questionElement.querySelectorAll('input[required], textarea[required], select[required]');
                 hiddenInputs.forEach(hiddenInput => {
@@ -300,7 +300,7 @@
                 if (dependsOn) {
                     // Find parent question inputs
                     const dependentInputs = document.querySelectorAll(`input[name="${dependsOn}"], select[name="${dependsOn}"]`);
-                    
+
                     console.log(`Found ${dependentInputs.length} dependent inputs for "${dependsOn}"`);
 
                     dependentInputs.forEach(input => {
@@ -327,23 +327,23 @@
             document.querySelectorAll('[data-depends-on]').forEach(questionElement => {
                 const dependsOn = questionElement.getAttribute('data-depends-on');
                 const showIf = questionElement.getAttribute('data-show-if') || 'yes';
-                
+
                 console.log(`Checking initial state for conditional question depending on: ${dependsOn}`);
-                
+
                 // Check for checked radio buttons
                 const checkedRadio = document.querySelector(`input[name="${dependsOn}"]:checked`);
                 if (checkedRadio) {
                     console.log(`Found checked radio: ${checkedRadio.value}`);
                     toggleConditionalQuestion(questionElement, checkedRadio.value, showIf);
                 }
-                
+
                 // Check for select elements with values
                 const selectElement = document.querySelector(`select[name="${dependsOn}"]`);
                 if (selectElement && selectElement.value) {
                     console.log(`Found select with value: ${selectElement.value}`);
                     toggleConditionalQuestion(questionElement, selectElement.value, showIf);
                 }
-                
+
                 // Check for text inputs with values
                 const textInput = document.querySelector(`input[type="text"][name="${dependsOn}"], textarea[name="${dependsOn}"]`);
                 if (textInput && textInput.value) {
@@ -356,9 +356,9 @@
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
             // If showIf is empty, default to "yes"
             const targetValue = showIf || 'yes';
-            
+
             console.log(`🔄 Toggle conditional: currentValue="${currentValue}", targetValue="${targetValue}"`);
-            
+
             // Handle both Portuguese and English values for "yes"
             const shouldShow = currentValue === targetValue || 
                               (targetValue === 'yes' && (currentValue === 'yes' || currentValue === 'Sim'));
@@ -824,7 +824,8 @@
                         throw new Error(data.error || 'Error submitting form');
                     }
                 })
-                .catch(error => {
+                .catch```text
+(error => {
                     console.error('Error:', error);
                     alert('Ocorreu um erro ao enviar o formulário. Tente novamente.');
 
