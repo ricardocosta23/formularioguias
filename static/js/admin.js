@@ -305,6 +305,11 @@ function updateQuestionField(formType, index, field, value) {
     const currentQuestions = getCurrentQuestions(formType);
     if (currentQuestions[index]) {
         currentQuestions[index][field] = value;
+        
+        // If the type field is being changed, re-render the questions to show/hide conditional fields
+        if (field === 'type') {
+            renderQuestions(formType, currentQuestions);
+        }
     }
 }
 
