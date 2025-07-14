@@ -321,6 +321,36 @@
                     });
                 }
             });
+
+            // Force initial state check for all conditional dependencies
+            console.log('🔄 Forcing initial state check for conditional questions...');
+            document.querySelectorAll('[data-depends-on]').forEach(questionElement => {
+                const dependsOn = questionElement.getAttribute('data-depends-on');
+                const showIf = questionElement.getAttribute('data-show-if') || 'yes';
+                
+                console.log(`Checking initial state for conditional question depending on: ${dependsOn}`);
+                
+                // Check for checked radio buttons
+                const checkedRadio = document.querySelector(`input[name="${dependsOn}"]:checked`);
+                if (checkedRadio) {
+                    console.log(`Found checked radio: ${checkedRadio.value}`);
+                    toggleConditionalQuestion(questionElement, checkedRadio.value, showIf);
+                }
+                
+                // Check for select elements with values
+                const selectElement = document.querySelector(`select[name="${dependsOn}"]`);
+                if (selectElement && selectElement.value) {
+                    console.log(`Found select with value: ${selectElement.value}`);
+                    toggleConditionalQuestion(questionElement, selectElement.value, showIf);
+                }
+                
+                // Check for text inputs with values
+                const textInput = document.querySelector(`input[type="text"][name="${dependsOn}"], textarea[name="${dependsOn}"]`);
+                if (textInput && textInput.value) {
+                    console.log(`Found text input with value: ${textInput.value}`);
+                    toggleConditionalQuestion(questionElement, textInput.value, showIf);
+                }
+            });
         }
 
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
