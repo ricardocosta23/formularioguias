@@ -378,13 +378,13 @@ function getCurrentQuestions(formType) {
 
             // Handle text destination column for monday_column type questions
             const textDestinationInput = element.querySelector('input[placeholder*="text_mkhotel_name"]');
-            if (textDestinationInput && textDestinationInput.value) {
+            if (textDestinationInput) {
                 question.text_destination_column = textDestinationInput.value;
             }
 
             // Handle rating destination column for monday_column type questions
             const ratingDestinationInput = element.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
-            if (ratingDestinationInput && ratingDestinationInput.value) {
+            if (ratingDestinationInput) {
                 question.rating_destination_column = ratingDestinationInput.value;
             }
 
