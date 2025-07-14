@@ -772,7 +772,7 @@
         "text": "Teste?",
         "type": "longtext",
         "destination_column": "long_text_mksdxwh3"
-      },
+      }
       
     ],
     "questions_title": "✏️Dados Pessoais"
