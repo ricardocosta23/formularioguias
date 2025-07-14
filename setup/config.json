@@ -401,7 +401,7 @@
       {
         "id": "divider_1752174894753",
         "type": "divider",
-        "title": "🛏️ Hotés"
+        "title": "🛏️ Hotéis"
       },
       {
         "id": "question_1752160095686",
@@ -430,41 +430,64 @@
         "type": "divider",
         "title": "🍴Alimentação"
       },
-      {
-        "id": "question_1752174708360",
-        "type": "yesno",
-        "required": true,
-        "text": "Tivemos alimentação inclusa?",
-        "destination_column": "text_mksqsmjv",
+   
+ {
+        "id": "question_17521741717319",
+        "type": "monday_column",
+        "required": false,
+        "text": "",
+        "source_column": "text_mksd9jca",
+        "text_destination_column": "text_mksvnywe",
+        "rating_destination_column": "numeric_mksv5c1r",
+       "is_conditional": false,
+        "source": "manual"
+      },
+ {
+        "id": "question_17521741717318",
+        "type": "monday_column",
+        "required": false,
+        "text": "",
+        "source_column": "text_mksdbtbn",
+        "text_destination_column": "text_mksvbzw7",
+        "rating_destination_column": "numeric_mksvwpmx",
+       "is_conditional": false,
+        "source": "manual"
+      },
+       
+ {
+        "id": "question_17521741717317",
+        "type": "monday_column",
+        "required": false,
+        "text": "",
+        "source_column": "text_mksd3h49",
+        "text_destination_column": "text_mksv90t7",
+        "rating_destination_column": "numeric_mksvw70j",
         "is_conditional": false,
         "source": "manual"
       },
-      {
-        "id": "question_1752174756966",
-        "type": "rating",
-        "required": true,
-        "text": "Nota restaurantes",
-        "destination_column": "numeric_mksqce6j",
-        "conditional": {
-          "depends_on": "question_1752174708360",
-          "show_if": "Sim"
-        },
-        "is_conditional": true,
-        "source": "manual"
-      },
-      {
-        "id": "question_1752177017103",
-        "type": "longtext",
+ {
+        "id": "question_17521741717316",
+        "type": "monday_column",
         "required": false,
-        "text": "Comentários alimentação",
-        "destination_column": "",
-        "conditional": {
-          "depends_on": "question_1752174708360",
-          "show_if": "Sim"
-        },
-        "is_conditional": true,
+        "text": "",
+        "source_column": "text_mksdwhtn",
+        "text_destination_column": "text_mksv7z2r",
+        "rating_destination_column": "numeric_mksvncrj",
+       "is_conditional": false,
         "source": "manual"
       },
+        {
+        "id": "question_17521741717315",
+        "type": "monday_column",
+        "required": false,
+        "text": "",
+        "source_column": "text_mksdyjy2",
+        "text_destination_column": "text_mksv5a0x",
+        "rating_destination_column": "numeric_mksvcc72",
+      "is_conditional": false,
+        "source": "manual"
+      },
+
       {
         "id": "divider_1752174909727",
         "type": "divider",
