@@ -1,3 +1,4 @@
+
 // Admin Interface JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdminInterface();
@@ -77,6 +78,7 @@ function loadConfiguration() {
     fetch('/api/config')
         .then(response => response.json())
         .then(config => {
+            console.log('Loaded config:', config);
             populateConfigurationForm(config);
         })
         .catch(error => {
@@ -111,9 +113,234 @@ function populateConfigurationForm(config) {
 
         // Populate questions
         if (formConfig.questions) {
+            console.log('Rendering questions for:', formType, formConfig.questions);
             renderQuestions(formType, formConfig.questions);
         }
     });
+}
+
+function renderQuestions(formType, questions) {
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    if (!questionsContainer) {
+        console.error('Questions container not found for:', formType);
+        return;
+    }
+
+    // Clear existing questions
+    questionsContainer.innerHTML = '';
+
+    questions.forEach((question, index) => {
+        const questionElement = createQuestionElement(formType, question, index);
+        questionsContainer.appendChild(questionElement);
+    });
+}
+
+function createQuestionElement(formType, question, index) {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-item mb-4 p-3 border rounded';
+    questionDiv.setAttribute('data-question-id', question.id);
+
+    let questionHtml = '';
+
+    if (question.type === 'divider') {
+        questionHtml = `
+            <div class="divider-question">
+                <h5 class="text-primary">
+                    <i data-feather="minus"></i>
+                    ${question.title || 'Divisor'}
+                </h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Título do Divisor:</label>
+                        <input type="text" class="form-control" value="${question.title || ''}" 
+                               onchange="updateQuestionField('${formType}', ${index}, 'title', this.value)">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                            <i data-feather="trash-2"></i> Remover
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        const typeOptions = {
+            'text': 'Texto',
+            'longtext': 'Texto Longo',
+            'yesno': 'Sim/Não',
+            'rating': 'Avaliação (1-10)',
+            'dropdown': 'Lista Suspensa',
+            'monday_column': 'Coluna Monday'
+        };
+
+        questionHtml = `
+            <div class="regular-question">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Pergunta ${index + 1}</h6>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                        <i data-feather="trash-2"></i> Remover
+                    </button>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'type', this.value)">
+                            ${Object.entries(typeOptions).map(([value, text]) => 
+                                `<option value="${value}" ${question.type === value ? 'selected' : ''}>${text}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Obrigatória:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'required', this.value === 'true')">
+                            <option value="false" ${!question.required ? 'selected' : ''}>Não</option>
+                            <option value="true" ${question.required ? 'selected' : ''}>Sim</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Texto da Pergunta:</label>
+                        <textarea class="form-control" rows="2" 
+                                  onchange="updateQuestionField('${formType}', ${index}, 'text', this.value)">${question.text || ''}</textarea>
+                    </div>
+                </div>
+                
+                ${question.type === 'dropdown' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Opções (separadas por ponto e vírgula):</label>
+                        <input type="text" class="form-control" value="${question.dropdown_options || ''}"
+                               placeholder="Opção 1;Opção 2;Opção 3"
+                               onchange="updateQuestionField('${formType}', ${index}, 'dropdown_options', this.value)">
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino (Monday):</label>
+                        <input type="text" class="form-control" value="${question.destination_column || ''}"
+                               placeholder="Ex: text_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'destination_column', this.value)">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
+                    </div>
+                </div>
+                
+                ${question.conditional ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <strong>Pergunta Condicional:</strong> Depende de "${question.conditional.depends_on}"
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    questionDiv.innerHTML = questionHtml;
+    return questionDiv;
+}
+
+function addQuestion(formType) {
+    const questionId = 'question_' + Date.now();
+    const newQuestion = {
+        id: questionId,
+        type: 'text',
+        text: '',
+        required: false,
+        source: 'manual',
+        destination_column: ''
+    };
+
+    // Get current questions
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    const currentQuestions = getCurrentQuestions(formType);
+    
+    // Add new question
+    currentQuestions.push(newQuestion);
+    
+    // Re-render questions
+    renderQuestions(formType, currentQuestions);
+    
+    // Scroll to new question
+    setTimeout(() => {
+        const newQuestionElement = questionsContainer.lastElementChild;
+        if (newQuestionElement) {
+            newQuestionElement.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, 100);
+}
+
+function removeQuestion(formType, index) {
+    if (confirm('Tem certeza que deseja remover esta pergunta?')) {
+        const currentQuestions = getCurrentQuestions(formType);
+        currentQuestions.splice(index, 1);
+        renderQuestions(formType, currentQuestions);
+    }
+}
+
+function updateQuestionField(formType, index, field, value) {
+    const currentQuestions = getCurrentQuestions(formType);
+    if (currentQuestions[index]) {
+        currentQuestions[index][field] = value;
+    }
+}
+
+function getCurrentQuestions(formType) {
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    if (!questionsContainer) return [];
+
+    const questions = [];
+    const questionElements = questionsContainer.querySelectorAll('.question-item');
+    
+    questionElements.forEach((element, index) => {
+        const questionId = element.getAttribute('data-question-id');
+        
+        if (element.querySelector('.divider-question')) {
+            // Divider question
+            const titleInput = element.querySelector('input[type="text"]');
+            questions.push({
+                id: questionId,
+                type: 'divider',
+                title: titleInput ? titleInput.value : ''
+            });
+        } else {
+            // Regular question
+            const typeSelect = element.querySelector('select');
+            const requiredSelect = element.querySelectorAll('select')[1];
+            const textTextarea = element.querySelector('textarea');
+            const dropdownInput = element.querySelector('input[placeholder*="Opção"]');
+            const destinationInput = element.querySelector('input[placeholder*="text_mksd"]');
+            
+            const question = {
+                id: questionId,
+                type: typeSelect ? typeSelect.value : 'text',
+                text: textTextarea ? textTextarea.value : '',
+                required: requiredSelect ? requiredSelect.value === 'true' : false,
+                source: 'manual'
+            };
+            
+            if (destinationInput && destinationInput.value) {
+                question.destination_column = destinationInput.value;
+            }
+            
+            if (dropdownInput && dropdownInput.value) {
+                question.dropdown_options = dropdownInput.value;
+            }
+            
+            questions.push(question);
+        }
+    });
+    
+    return questions;
 }
 
 function saveConfiguration() {
@@ -165,44 +392,17 @@ function extractFormConfig(formType) {
             const title = titleField.value.trim();
             const column = columnField.value.trim();
 
-            if (title || column) {
-                config.header_fields.push({
-                    title: title,
-                    monday_column: column
-                });
-            }
+            config.header_fields.push({
+                title: title,
+                monday_column: column
+            });
         }
     }
 
     // Extract questions
-    const questionsContainer = document.getElementById(`${formType}-questions`);
-    if (questionsContainer) {
-        const questionItems = questionsContainer.querySelectorAll('.question-item');
-        questionItems.forEach((item, index) => {
-            const questionConfig = extractQuestionConfig(item, index);
-            if (questionConfig) {
-                config.questions.push(questionConfig);
-            }
-        });
-    }
+    config.questions = getCurrentQuestions(formType);
 
     return config;
-}
-
-function extractQuestionConfig(questionItem, index) {
-    // This function would extract question configuration from the DOM
-    // Implementation depends on the question form structure
-    return null; // Placeholder
-}
-
-function addQuestion(formType) {
-    // Add new question functionality
-    console.log('Adding question for:', formType);
-}
-
-function renderQuestions(formType, questions) {
-    // Render questions in the admin interface
-    console.log('Rendering questions for:', formType, questions);
 }
 
 function loadForms() {
