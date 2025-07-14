@@ -332,6 +332,12 @@
                 // Validate only visible required fields
                 const visibleRequiredFields = form.querySelectorAll('input[required], textarea[required], select[required]');
                 let hasValidationErrors = false;
+                let firstInvalidField = null;
+
+                // First, hide all error messages
+                document.querySelectorAll('.error-message').forEach(errorDiv => {
+                    errorDiv.style.display = 'none';
+                });
 
                 visibleRequiredFields.forEach(field => {
                     const questionSection = field.closest('.question-section');
@@ -347,52 +353,27 @@
                     if (!field.value.trim() && field.offsetParent !== null) {
                         hasValidationErrors = true;
                         
-                        // Show error message - get the question ID from the name attribute or field ID
+                        // Get the question ID from the name attribute or field ID
                         let questionId = field.name || field.id;
                         // For rating fields, the hidden input has name = questionId, but the ID is questionId_input
                         if (questionId.endsWith('_input')) {
                             questionId = questionId.replace('_input', '');
                         }
                         
+                        // Show error message
                         const errorDiv = document.getElementById('error-' + questionId);
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
                         }
                         
-                        field.focus();
-                        return;
-                    } else {
-                        // Hide error message for valid fields
-                        let questionId = field.name || field.id;
-                        if (questionId.endsWith('_input')) {
-                            questionId = questionId.replace('_input', '');
-                        }
-                        
-                        const errorDiv = document.getElementById('error-' + questionId);
-                        if (errorDiv) {
-                            errorDiv.style.display = 'none';
+                        // Set first invalid field for scrolling
+                        if (!firstInvalidField) {
+                            firstInvalidField = field;
                         }
                     }
                 });
 
                 if (hasValidationErrors) {
-                     let firstInvalidField = null;
-                     visibleRequiredFields.forEach(field => {
-                        const questionSection = field.closest('.question-section');
-
-                        // If the field is in a conditional section that's hidden, skip validation
-                        if (questionSection && questionSection.style.display === 'none') {
-                            // Remove required attribute temporarily for hidden fields
-                            field.removeAttribute('required');
-                            return;
-                        }
-
-                        // Check if field is empty and visible
-                        if (!field.value.trim() && field.offsetParent !== null && !firstInvalidField) {
-                            firstInvalidField = field;
-                        }
-                    });
-
                     if (firstInvalidField) {
                         firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
