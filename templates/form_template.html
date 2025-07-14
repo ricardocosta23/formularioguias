@@ -354,14 +354,17 @@
         }
 
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
-            // If showIf is empty, default to "yes"
-            const targetValue = showIf || 'yes';
+            console.log(`🔄 Toggle conditional: currentValue="${currentValue}", targetValue="${showIf}"`);
 
-            console.log(`🔄 Toggle conditional: currentValue="${currentValue}", targetValue="${targetValue}"`);
+            let shouldShow = false;
 
-            // Handle both Portuguese and English values for "yes"
-            const shouldShow = currentValue === targetValue || 
-                              (targetValue === 'yes' && (currentValue === 'yes' || currentValue === 'Sim'));
+            // If showIf is empty or not specified, show when parent is "Sim" or "yes"
+            if (!showIf || showIf === '') {
+                shouldShow = (currentValue === 'Sim' || currentValue === 'yes');
+            } else {
+                // Use exact match with showIf value
+                shouldShow = (currentValue === showIf);
+            }
 
             console.log(`Should show: ${shouldShow}`);
 
