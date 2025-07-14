@@ -475,67 +475,22 @@ function getCurrentQuestions(formType) {
         const questionItems = questionsContainer.querySelectorAll('.question-item');
         const questions = [];
 
-        questionItems.forEach((item, index) => {
+        questionItems.forEach(item => {
             const questionId = item.getAttribute('data-question-id');
+            let question = null;
 
-            // Check if this is a divider question
-            const isDivider = item.querySelector('.divider-question');
+            // Find existing question (if available)
+            if (questionId) {
+                question = questions.find(q => q.id === questionId);
+            }
 
-            if (isDivider) {
-                // Extract divider data
-                const titleInput = item.querySelector('input[type="text"]');
-                questions.push({
-                    id: questionId,
-                    type: 'divider',
-                    title: titleInput ? titleInput.value : ''
-                });
-            } else {
-                // Extract regular question data
-                const typeSelect = item.querySelector('select:first-of-type');
-                const requiredSelect = item.querySelector('select:nth-of-type(2)');
-                const textTextarea = item.querySelector('textarea');
-                const destinationInput = item.querySelector('input[placeholder*="text_mk"], input[placeholder*="Ex: text_mk"]');
-                const dropdownInput = item.querySelector('input[placeholder*="Opção 1"]');
-                const sourceColumnInput = item.querySelector('input[placeholder*="text_mkrj9z52"]');
-                const textDestinationInput = item.querySelector('input[placeholder*="text_mkhotel_name"]');
-                const ratingDestinationInput = item.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
-                const conditionalDependsSelect = item.querySelector('.conditional-depends-on');
-                const conditionalShowSelect = item.querySelector('.conditional-show-if');
-
-                const question = {
-                    id: questionId,
-                    type: typeSelect ? typeSelect.value : 'text',
-                    text: textTextarea ? textTextarea.value : '',
-                    required: requiredSelect ? requiredSelect.value === 'true' : false,
-                    destination_column: destinationInput ? destinationInput.value : '',
-                    source: 'manual',
-                    is_conditional: false
-                };
-
-                // Add dropdown options if it's a dropdown question
-                if (question.type === 'dropdown' && dropdownInput) {
-                    question.dropdown_options = dropdownInput.value;
-                }
-
-                // Add monday column specific fields
-                if (question.type === 'monday_column') {
-                    if (sourceColumnInput) question.source_column = sourceColumnInput.value;
-                    if (textDestinationInput) question.text_destination_column = textDestinationInput.value;
-                    if (ratingDestinationInput) question.rating_destination_column = ratingDestinationInput.value;
-                }
-
-                // Add conditional logic
-                if (conditionalDependsSelect && conditionalDependsSelect.value) {
-                    question.conditional = {
-                        depends_on: conditionalDependsSelect.value,
-                        show_if: conditionalShowSelect ? conditionalShowSelect.value : ''
-                    };
-                }
-
+            if (!question) {
+                question = { id: questionId };
                 questions.push(question);
             }
         });
 
+        // Map values from the DOM back to the question objects
         return questions;
 
     } catch (error) {
@@ -1091,6 +1046,43 @@ function updateQuestionField(formType, index, field, value) {
     }
 }
 
+function getCurrentQuestions(formType) {
+    // Attempt to get questions from the DOM
+    try {
+        const questionsContainer = document.getElementById(`${formType}-questions`);
+        if (!questionsContainer) {
+            console.warn('Questions container not found:', `${formType}-questions`);
+            return []; // Return an empty array
+        }
+
+        // Collect question items from the DOM
+        const questionItems = questionsContainer.querySelectorAll('.question-item');
+        const questions = [];
+
+        questionItems.forEach(item => {
+            const questionId = item.getAttribute('data-question-id');
+            let question = null;
+
+            // Find existing question (if available)
+            if (questionId) {
+                question = questions.find(q => q.id === questionId);
+            }
+
+            if (!question) {
+                question = { id: questionId };
+                questions.push(question);
+            }
+        });
+
+        // Map values from the DOM back to the question objects
+        return questions;
+
+    } catch (error) {
+        console.error('Error getting current questions:', error);
+        return [];
+    }
+}
+
 function saveConfiguration() {
     const config = {
         guias: extractFormConfig('guias'),
@@ -1194,7 +1186,6 @@ function loadForms() {
             if (formsEmpty) formsEmpty.style.display = 'block';
             if (formsCount) formsCount.textContent = '0';
         });
-    }
 }
 
 function renderFormsList(forms) {
@@ -1366,4 +1357,187 @@ function getAllYesNoQuestions(formType) {
     const currentQuestions = getCurrentQuestions(formType);
     const yesNoQuestions = currentQuestions.filter(q => q.type === 'yesno');
     return yesNoQuestions;
+}
+
+//Add conditional questions
+function createQuestionElement(formType, question, index) {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-item mb-4 p-3 border rounded';
+    questionDiv.setAttribute('data-question-id', question.id);
+
+    let questionHtml = '';
+
+    if (question.type === 'divider') {
+        questionHtml = `
+            <div class="divider-question">
+                <h5 class="text-primary">
+                    <i data-feather="minus"></i>
+                    ${question.title || 'Divisor'}
+                </h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Título do Divisor:</label>
+                        <input type="text" class="form-control" value="${question.title || ''}" 
+                               onchange="updateQuestionField('${formType}', ${index}, 'title', this.value)">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                            <i data-feather="trash-2"></i> Remover
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        const typeOptions = {
+            'text': 'Texto',
+            'longtext': 'Texto Longo',
+            'yesno': 'Sim/Não',
+            'rating': 'Avaliação (1-10)',
+            'dropdown': 'Lista Suspensa',
+            'monday_column': 'Coluna Monday'
+        };
+
+        questionHtml = `
+            <div class="regular-question">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Pergunta ${index + 1}</h6>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                        <i data-feather="trash-2"></i> Remover
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'type', this.value)">
+                            ${Object.entries(typeOptions).map(([value, text]) => 
+                                `<option value="${value}" ${question.type === value ? 'selected' : ''}>${text}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Obrigatória:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'required', this.value === 'true')">
+                            <option value="false" ${!question.required ? 'selected' : ''}>Não</option>
+                            <option value="true" ${question.required ? 'selected' : ''}>Sim</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Texto da Pergunta:</label>
+                        <textarea class="form-control" rows="2" 
+                                  onchange="updateQuestionField('${formType}', ${index}, 'text', this.value)">${question.text || ''}</textarea>
+                    </div>
+                </div>
+
+                ${question.type === 'dropdown' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Opções (separadas por ponto e vírgula):</label>
+                        <input type="text" class="form-control" value="${question.dropdown_options || ''}"
+                               placeholder="Opção 1;Opção 2;Opção 3"
+                               onchange="updateQuestionField('${formType}', ${index}, 'dropdown_options', this.value)">
+                    </div>
+                </div>
+                ` : ''}
+
+                ${question.type === 'monday_column' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Coluna de Origem (Monday):</label>
+                        <input type="text" class="form-control" value="${question.source_column || ''}"
+                               placeholder="Ex: text_mkrj9z52, dropdown_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'source_column', this.value)">
+                        <small class="form-text text-muted">ID da coluna do Monday.com que será usada como nome/valor da pergunta</small>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Texto:</label>
+                        <input type="text" class="form-control" value="${question.text_destination_column || question.destination_column || ''}"
+                               placeholder="Ex: text_mkhotel_name"
+                               onchange="updateQuestionField('${formType}', ${index}, 'text_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar o nome/texto do item</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Avaliação:</label>
+                        <input type="text" class="form-control" value="${question.rating_destination_column || ''}"
+                               placeholder="Ex: numeric_mkrjpfxv"
+                               onchange="updateQuestionField('${formType}', ${index}, 'rating_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar a nota (1-10)</small>
+                    </div>
+                </div>
+                ` : `
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino (Monday):</label>
+                        <input type="text" class="form-control" value="${question.destination_column || ''}"
+                               placeholder="Ex: text_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'destination_column', this.value)">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
+                    </div>
+                </div>
+                `}
+
+                ${question.type !== 'monday_column' ? `
+                <div class="row mt-3">
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Depende da pergunta (Sim/Não):</label>
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
+                            <option value="">Nenhuma</option>
+                            ${getAllYesNoQuestions(formType).map(q => 
+                                `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mostrar se a resposta for:</label>
+                        <select class="form-control conditional-show-if" onchange="updateQuestionConditional('${formType}', ${index}, 'show_if', this.value)">
+                            <option value="">Qualquer resposta</option>
+                            <option value="Sim" ${question.conditional && question.conditional.show_if === 'Sim' ? 'selected' : ''}>Sim</option>
+                            <option value="Não" ${question.conditional && question.conditional.show_if === 'Não' ? 'selected' : ''}>Não</option>
+                        </select>
+                    </div>
+                </div>
+
+                ${question.conditional ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <strong>Pergunta Condicional:</strong> Depende de "${question.conditional.depends_on}"
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    questionDiv.innerHTML = questionHtml;
+    return questionDiv;
+}
+
+function updateQuestionConditional(formType, index, field, value) {
+    const currentQuestions = getCurrentQuestions(formType);
+    if (currentQuestions[index]) {
+        if (!currentQuestions[index].conditional) {
+            currentQuestions[index].conditional = {};
+        }
+        currentQuestions[index].conditional[field] = value;
+    }
 }
