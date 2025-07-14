@@ -274,7 +274,7 @@ function createQuestionElement(formType, question, index) {
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Depende da pergunta (Sim/Não):</label>
-                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}', 'depends_on', this.value)">
                             <option value="">Nenhuma</option>
                             ${getAllYesNoQuestions(formType).map(q => 
                                 `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
@@ -284,6 +284,7 @@ function createQuestionElement(formType, question, index) {
                     <div class="col-md-6">
                         <label class="form-label">Mostrar se a resposta for:</label>
                         <select class="form-control conditional-show-if" onchange="updateQuestionConditional('${formType}', ${index}, 'show_if', this.value)">
+                            <option value="">Qualquer resposta</option>
                             <option value="Sim" ${question.conditional && question.conditional.show_if === 'Sim' ? 'selected' : ''}>Sim</option>
                             <option value="Não" ${question.conditional && question.conditional.show_if === 'Não' ? 'selected' : ''}>Não</option>
                         </select>
@@ -822,7 +823,7 @@ function createQuestionElement(formType, question, index) {
 
                 <div class="row mt-3">
                     <div class="col-md-6">
-                        <label class="form-label">Depende da pergunta (Sim/Não):</label>
+                        <label class="form-label">Depende da pergunta (Sim/Não):label>
                         <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}', 'depends_on', this.value)">
                             <option value="">Nenhuma</option>
                             ${getAllYesNoQuestions(formType).map(q => 
@@ -833,6 +834,7 @@ function createQuestionElement(formType, question, index) {
                     <div class="col-md-6">
                         <label class="form-label">Mostrar se a resposta for:</label>
                         <select class="form-control conditional-show-if" onchange="updateQuestionConditional('${formType}', ${index}, 'show_if', this.value)">
+                            <option value="">Qualquer resposta</option>
                             <option value="Sim" ${question.conditional && question.conditional.show_if === 'Sim' ? 'selected' : ''}>Sim</option>
                             <option value="Não" ${question.conditional && question.conditional.show_if === 'Não' ? 'selected' : ''}>Não</option>
                         </select>
