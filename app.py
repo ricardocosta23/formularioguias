@@ -272,6 +272,8 @@ def process_form_background(form_id, submission_data, stored_form_data):
                     question_id = question.get('id')
                     destination_column = question.get('destination_column')
                     question_destination_column = question.get('question_destination_column')
+                    text_destination_column = question.get('text_destination_column')
+                    rating_destination_column = question.get('rating_destination_column')
                     question_type = question.get('type')
 
                     # Skip divider questions
@@ -291,14 +293,15 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             elif response_str.lower() == "no":
                                 response_str = "Não"
 
-                            if destination_column and destination_column.strip():
-                                column_values[destination_column.strip()] = response_str
+                            # Save to rating destination column
+                            if rating_destination_column and rating_destination_column.strip():
+                                column_values[rating_destination_column.strip()] = response_str
 
-                        # Save the column value (question text) if configured
-                        if question_destination_column and question_destination_column.strip():
+                        # Save the column value (question text) to text destination column
+                        if text_destination_column and text_destination_column.strip():
                             column_value = question.get('column_value', '')
                             if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
-                                column_values[question_destination_column.strip()] = column_value
+                                column_values[text_destination_column.strip()] = column_value
 
                     else:
                         # For regular questions (yesno, rating, text, longtext, dropdown)
@@ -420,4 +423,3 @@ app.FORMS_STORAGE = FORMS_STORAGE
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-```
