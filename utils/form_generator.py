@@ -17,13 +17,16 @@ class FormGenerator:
         """Generate a new form and store it persistently"""
         form_id = str(uuid.uuid4())
 
+        # Process questions to ensure conditional questions are properly formatted
+        processed_questions = self._process_questions(form_data.get("questions", []))
+
         # Create complete form data structure
         complete_form_data = {
             "id": form_id,
             "type": form_data.get("type"),
             "title": form_data.get("title"),
             "subtitle": form_data.get("subtitle"),
-            "questions": form_data.get("questions", []),
+            "questions": processed_questions,
             "webhook_data": form_data.get("webhook_data", {}),
             "header_data": form_data.get("header_data", {}),
             "created_at": datetime.now().isoformat()
@@ -38,6 +41,35 @@ class FormGenerator:
 
         self.logger.info(f"Generated form {form_id} for type {form_data.get('type')}")
         return form_id
+
+    def _process_questions(self, questions):
+        """Process questions to ensure conditional questions are properly formatted"""
+        processed_questions = []
+        
+        for question in questions:
+            # Copy the question
+            processed_question = question.copy()
+            
+            # Handle conditional questions
+            if 'conditional' in question and question['conditional']:
+                # Ensure the conditional structure is correct
+                conditional = question['conditional']
+                if conditional.get('depends_on') and conditional.get('show_if'):
+                    processed_question['conditional'] = {
+                        'depends_on': conditional['depends_on'],
+                        'show_if': conditional['show_if']
+                    }
+                    processed_question['is_conditional'] = True
+                else:
+                    # Remove invalid conditional
+                    processed_question.pop('conditional', None)
+                    processed_question['is_conditional'] = False
+            else:
+                processed_question['is_conditional'] = False
+            
+            processed_questions.append(processed_question)
+        
+        return processed_questions
 
     def _save_form_to_file(self, form_id, form_data):
         """Save form data to a JSON file"""
