@@ -89,7 +89,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksdw43g",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "guide_malha_aerea",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158102105",
@@ -98,7 +102,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "text_mksdsh42",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "guide_malha_aerea",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158124136",
@@ -107,7 +115,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "numeric_mksdwqef",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158102105",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158145271",
@@ -116,7 +128,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "long_text_mksdpbqr",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158102105",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158172655",
@@ -125,7 +141,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "numeric_mksd3094",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "guide_malha_aerea",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158183825",
@@ -134,7 +154,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksd9gy3",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "guide_malha_aerea",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158192367",
@@ -143,7 +167,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksdt1bq",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158183825",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158205456",
@@ -152,7 +180,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksd77w3",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "guide_malha_aerea",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158215774",
@@ -161,7 +193,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksds0py",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158205456",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752174894752",
@@ -184,7 +220,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksdhgmp",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158878674",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158913249",
@@ -193,7 +233,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksdpj36",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158878674",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158929184",
@@ -202,7 +246,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksdja3e",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158878674",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158940898",
@@ -210,7 +258,11 @@
         "text": "Usou mais um DMC?",
         "required": false,
         "source": "manual",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158878674",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158960696",
@@ -219,7 +271,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksdaqvj",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158940898",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752158983407",
@@ -228,7 +284,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "text_mksdcb45",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158940898",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752159002448",
@@ -237,7 +297,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksdv98h",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752158940898",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752174894753",
@@ -260,7 +324,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksdgq94",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752159011799",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752159034847",
@@ -269,7 +337,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksdsem2",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752159011799",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752159053248",
@@ -278,7 +350,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksdg5nd",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752159011799",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752174894753",
@@ -301,7 +377,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "numeric_mksd391j",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752159068118",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752159094536",
@@ -310,7 +390,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksdxghk",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752159068118",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752174894753",
@@ -358,7 +442,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "numeric_mksqce6j",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752174708360",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752177017103",
@@ -366,7 +454,11 @@
         "text": "Comentários alimentação",
         "required": false,
         "source": "manual",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752174708360",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752174909727",
@@ -443,7 +535,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "text_mksd2s53",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752177398886",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "question_1752177448310",
@@ -452,7 +548,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "text_mksd83af",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752177418807",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752179076047",
@@ -475,7 +575,11 @@
         "required": true,
         "source": "manual",
         "destination_column": "text_mksdncb6",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752177476605",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752179106383",
@@ -498,7 +602,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksq9rnp",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752177527819",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752179141870",
@@ -521,7 +629,11 @@
         "required": false,
         "source": "manual",
         "destination_column": "numeric_mksqebx9",
-        "is_conditional": false
+        "conditional": {
+          "depends_on": "question_1752177675991",
+          "show_if": "Sim"
+        },
+        "is_conditional": true
       },
       {
         "id": "divider_1752179185973",
@@ -558,23 +670,6 @@
         "required": false,
         "source": "manual",
         "destination_column": "long_text_mksdxwh3",
-        "is_conditional": false
-      },
-      {
-        "id": "question_1752177770745",
-        "type": "longtext",
-        "text": "Teste?",
-        "required": false,
-        "source": "manual",
-        "destination_column": "long_text_mksdxwh3",
-        "is_conditional": false
-      },
-      {
-        "id": "question_1752504107010",
-        "type": "rating",
-        "text": "Teste 2?",
-        "required": false,
-        "source": "manual",
         "is_conditional": false
       }
     ]
