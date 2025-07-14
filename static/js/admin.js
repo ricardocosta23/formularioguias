@@ -1,18 +1,255 @@
-import os
-import logging
-import time
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-from werkzeug.middleware.proxy_fix import ProxyFix
-import json
-import tempfile
-import uuid
-from datetime import datetime
-import threading
+// Admin Interface JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize admin interface
+    initializeAdminInterface();
+});
 
-# Import API modules
-from api.formguias import formguias_bp
-from api.formclientes import formclientes_bp  
-from api.formfornecedores import formfornecedores_bp
+function initializeAdminInterface() {
+    // Add click event listeners to tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
+
+    // Load existing configuration
+    loadConfiguration();
+
+    // Add event listeners for other buttons
+    setupEventListeners();
+}
+
+function switchTab(tabName) {
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Hide all config forms
+    document.querySelectorAll('.config-form').forEach(form => {
+        form.classList.remove('active');
+    });
+    
+    // Add active class to clicked tab button
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Show corresponding config form
+    const targetForm = document.getElementById(`${tabName}-config`);
+    if (targetForm) {
+        targetForm.classList.add('active');
+    }
+}
+
+function setupEventListeners() {
+    // Save configuration button
+    const saveBtn = document.getElementById('saveConfig');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveConfiguration);
+    }
+
+    // Add question button
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    if (addQuestionBtn) {
+        addQuestionBtn.addEventListener('click', function() {
+            const activeTab = document.querySelector('.tab-button.active').getAttribute('data-tab');
+            if (activeTab !== 'forms') {
+                addQuestion(activeTab);
+            }
+        });
+    }
+
+    // Refresh forms button
+    const refreshBtn = document.getElementById('refreshForms');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadForms);
+    }
+}
+
+function loadConfiguration() {
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(config => {
+            populateConfigurationFields(config);
+        })
+        .catch(error => {
+            console.error('Error loading configuration:', error);
+        });
+}
+
+function populateConfigurationFields(config) {
+    // Populate configuration fields for each form type
+    ['guias', 'clientes', 'fornecedores'].forEach(formType => {
+        const formConfig = config[formType] || {};
+        
+        // Basic configuration
+        const boardAField = document.getElementById(`${formType}-board-a`);
+        const boardBField = document.getElementById(`${formType}-board-b`);
+        const linkColumnField = document.getElementById(`${formType}-link-column`);
+        
+        if (boardAField) boardAField.value = formConfig.board_a || '';
+        if (boardBField) boardBField.value = formConfig.board_b || '';
+        if (linkColumnField) linkColumnField.value = formConfig.link_column || '';
+        
+        // Header fields
+        if (formConfig.header_fields) {
+            formConfig.header_fields.forEach((field, index) => {
+                const titleField = document.getElementById(`${formType}-header-${index + 1}-title`);
+                const columnField = document.getElementById(`${formType}-header-${index + 1}-column`);
+                
+                if (titleField) titleField.value = field.title || '';
+                if (columnField) columnField.value = field.monday_column || '';
+            });
+        }
+        
+        // Questions
+        if (formConfig.questions) {
+            renderQuestions(formType, formConfig.questions);
+        }
+    });
+}
+
+function saveConfiguration() {
+    // Collect configuration from all forms
+    const config = {};
+    
+    ['guias', 'clientes', 'fornecedores'].forEach(formType => {
+        config[formType] = {
+            board_a: document.getElementById(`${formType}-board-a`).value || '',
+            board_b: document.getElementById(`${formType}-board-b`).value || '',
+            link_column: document.getElementById(`${formType}-link-column`).value || '',
+            header_fields: [],
+            questions: []
+        };
+        
+        // Collect header fields
+        for (let i = 1; i <= 4; i++) {
+            const titleField = document.getElementById(`${formType}-header-${i}-title`);
+            const columnField = document.getElementById(`${formType}-header-${i}-column`);
+            
+            if (titleField && columnField) {
+                const title = titleField.value.trim();
+                const column = columnField.value.trim();
+                
+                if (title || column) {
+                    config[formType].header_fields.push({
+                        title: title,
+                        monday_column: column
+                    });
+                }
+            }
+        }
+        
+        // Collect questions (implement this based on your question structure)
+        config[formType].questions = collectQuestions(formType);
+    });
+    
+    // Save configuration
+    fetch('/api/config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert('Erro ao salvar configuração: ' + result.error);
+        } else {
+            alert('Configuração salva com sucesso!');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving configuration:', error);
+        alert('Erro ao salvar configuração');
+    });
+}
+
+function collectQuestions(formType) {
+    // This function should collect questions from the form
+    // Implementation depends on your question structure
+    return [];
+}
+
+function renderQuestions(formType, questions) {
+    // This function should render questions in the form
+    // Implementation depends on your question structure
+}
+
+function addQuestion(formType) {
+    // This function should add a new question
+    // Implementation depends on your question structure
+    console.log('Adding question for', formType);
+}
+
+function loadForms() {
+    const formsLoading = document.getElementById('formsLoading');
+    const formsEmpty = document.getElementById('formsEmpty');
+    const formsList = document.getElementById('formsList');
+    const formsCount = document.getElementById('formsCount');
+    
+    if (formsLoading) formsLoading.style.display = 'block';
+    if (formsEmpty) formsEmpty.style.display = 'none';
+    if (formsList) formsList.style.display = 'none';
+    
+    fetch('/api/forms')
+        .then(response => response.json())
+        .then(forms => {
+            if (formsLoading) formsLoading.style.display = 'none';
+            
+            if (forms.length === 0) {
+                if (formsEmpty) formsEmpty.style.display = 'block';
+                if (formsCount) formsCount.textContent = '0';
+            } else {
+                if (formsList) {
+                    formsList.style.display = 'block';
+                    renderFormsList(forms);
+                }
+                if (formsCount) formsCount.textContent = forms.length.toString();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading forms:', error);
+            if (formsLoading) formsLoading.style.display = 'none';
+            if (formsEmpty) formsEmpty.style.display = 'block';
+        });
+}
+
+function renderFormsList(forms) {
+    const formsList = document.getElementById('formsList');
+    if (!formsList) return;
+    
+    formsList.innerHTML = forms.map(form => `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">${form.type || 'Form'}</h6>
+                    <p class="card-text small text-muted">ID: ${form.id}</p>
+                    <a href="/form/${form.id}" class="btn btn-primary btn-sm" target="_blank">
+                        <i data-feather="external-link"></i> Abrir
+                    </a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Re-initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+// Load forms when the forms tab is activated
+document.addEventListener('DOMContentLoaded', function() {
+    const formsTab = document.querySelector('[data-tab="forms"]');
+    if (formsTab) {
+        formsTab.addEventListener('click', function() {
+            setTimeout(loadForms, 100);
+        });
+    }
+});
 
 # Configure logging for Vercel
 logging.basicConfig(level=logging.INFO)
