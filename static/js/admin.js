@@ -374,6 +374,131 @@ function updateQuestionConditional(formType, index, field, value) {
     }
 }
 
+// Question management functions
+function addQuestion(formType) {
+    if (!formType) {
+        console.error('Form type is required');
+        return;
+    }
+
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    if (!questionsContainer) {
+        console.error('Questions container not found for:', formType);
+        return;
+    }
+
+    // Get current questions from the rendered form
+    const currentQuestions = getCurrentQuestions(formType);
+
+    // Create new question with unique ID
+    const newQuestion = {
+        id: `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'text',
+        text: '',
+        required: false,
+        destination_column: '',
+        source: 'manual',
+        is_conditional: false
+    };
+
+    // Add to current questions array
+    currentQuestions.push(newQuestion);
+
+    // Re-render questions with updated array
+    renderQuestions(formType, currentQuestions);
+
+    console.log('Added new question to', formType);
+}
+
+function removeQuestion(formType, index) {
+    if (!formType) {
+        console.error('Form type is required');
+        return;
+    }
+
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    if (!questionsContainer) {
+        console.error('Questions container not found for:', formType);
+        return;
+    }
+
+    // Get current questions from the rendered form
+    const currentQuestions = getCurrentQuestions(formType);
+
+    if (index >= 0 && index < currentQuestions.length) {
+        // Remove the question at the specified index
+        currentQuestions.splice(index, 1);
+
+        // Re-render questions with updated array
+        renderQuestions(formType, currentQuestions);
+    } else {
+        console.error('Invalid index for removing question:', index);
+    }
+}
+
+function updateQuestionField(formType, index, field, value) {
+    if (!formType) {
+        console.error('Form type is required');
+        return;
+    }
+
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    if (!questionsContainer) {
+        console.error('Questions container not found for:', formType);
+        return;
+    }
+
+    // Get current questions from the rendered form
+    const currentQuestions = getCurrentQuestions(formType);
+
+    if (currentQuestions && currentQuestions[index]) {
+        // Update the field for the question at the specified index
+        currentQuestions[index][field] = value;
+
+        // Re-render questions with updated array
+        renderQuestions(formType, currentQuestions);
+    } else {
+        console.error('Invalid index or questions array for updating question field:', index);
+    }
+}
+
+function getCurrentQuestions(formType) {
+    // Attempt to get questions from the DOM
+    try {
+        const questionsContainer = document.getElementById(`${formType}-questions`);
+        if (!questionsContainer) {
+            console.warn('Questions container not found:', `${formType}-questions`);
+            return []; // Return an empty array
+        }
+
+        // Collect question items from the DOM
+        const questionItems = questionsContainer.querySelectorAll('.question-item');
+        const questions = [];
+
+        questionItems.forEach(item => {
+            const questionId = item.getAttribute('data-question-id');
+            let question = null;
+
+            // Find existing question (if available)
+            if (questionId) {
+                question = questions.find(q => q.id === questionId);
+            }
+
+            if (!question) {
+                question = { id: questionId };
+                questions.push(question);
+            }
+        });
+
+        // Map values from the DOM back to the question objects
+        return questions;
+
+    } catch (error) {
+        console.error('Error getting current questions:', error);
+        return [];
+    }
+}
+
 function saveConfiguration() {
     const config = {
         guias: extractFormConfig('guias'),
@@ -644,8 +769,7 @@ if (document.readyState === 'loading') {
 }
 
 function getAllYesNoQuestions(formType) {
-    // Get current questions
-    const questionsContainer = document.getElementById(`${formType}-questions`);
+    // Get current questions for the specific form type
     const currentQuestions = getCurrentQuestions(formType);
     const yesNoQuestions = currentQuestions.filter(q => q.type === 'yesno');
     return yesNoQuestions;
@@ -1229,8 +1353,7 @@ if (document.readyState === 'loading') {
 }
 
 function getAllYesNoQuestions(formType) {
-    // Get current questions
-    const questionsContainer = document.getElementById(`${formType}-questions`);
+    // Get current questions for the specific form type
     const currentQuestions = getCurrentQuestions(formType);
     const yesNoQuestions = currentQuestions.filter(q => q.type === 'yesno');
     return yesNoQuestions;
