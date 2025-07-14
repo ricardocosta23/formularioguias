@@ -910,7 +910,11 @@ class AdminInterface {
     showNotification(message, type) {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} notification`;
+        let alertClass = 'alert-danger';
+        if (type === 'success') alertClass = 'alert-success';
+        if (type === 'warning') alertClass = 'alert-warning';
+        
+        notification.className = `alert ${alertClass} notification`;
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -1032,12 +1036,18 @@ class AdminInterface {
             });
 
             if (response.ok) {
-                // Reload configuration after saving
-                const reloadResponse = await fetch('/api/reload_config', { method: 'POST' });
-                if (reloadResponse.ok) {
-                    this.showNotification('Configuração salva e recarregada com sucesso!', 'success');
+                const result = await response.json();
+                
+                if (result.warning) {
+                    this.showNotification(result.message, 'warning');
                 } else {
-                    this.showNotification('Configuração salva, mas erro ao recarregar!', 'warning');
+                    // Reload configuration after saving
+                    const reloadResponse = await fetch('/api/reload_config', { method: 'POST' });
+                    if (reloadResponse.ok) {
+                        this.showNotification('Configuração salva e recarregada com sucesso!', 'success');
+                    } else {
+                        this.showNotification('Configuração salva, mas erro ao recarregar!', 'warning');
+                    }
                 }
             } else {
                 throw new Error('Failed to save configuration');
