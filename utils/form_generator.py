@@ -1,4 +1,3 @@
-
 import uuid
 import json
 import os
@@ -45,11 +44,11 @@ class FormGenerator:
     def _process_questions(self, questions):
         """Process questions to ensure conditional questions are properly formatted"""
         processed_questions = []
-        
+
         for question in questions:
             # Copy the question
             processed_question = question.copy()
-            
+
             # Handle conditional questions
             if 'conditional' in question and question['conditional']:
                 # Ensure the conditional structure is correct
@@ -66,9 +65,9 @@ class FormGenerator:
                     processed_question['is_conditional'] = False
             else:
                 processed_question['is_conditional'] = False
-            
+
             processed_questions.append(processed_question)
-        
+
         return processed_questions
 
     def _save_form_to_file(self, form_id, form_data):
@@ -99,20 +98,20 @@ class FormGenerator:
             form_data = current_app.get_form_data(form_id)
             if form_data:
                 return form_data
-        
+
         # If not in memory, try loading from file
         form_data = self._load_form_from_file(form_id)
         if form_data and hasattr(current_app, 'store_form_data'):
             # Store back in memory for future access
             current_app.store_form_data(form_id, form_data)
-        
+
         return form_data
 
     def list_all_forms(self):
         """List all forms from both memory and files"""
         forms = []
         form_ids = set()
-        
+
         # Get forms from memory
         if hasattr(current_app, 'FORMS_STORAGE'):
             for form_id, form_data in current_app.FORMS_STORAGE.items():
@@ -123,7 +122,7 @@ class FormGenerator:
                     'header_data': form_data.get('header_data', {})
                 })
                 form_ids.add(form_id)
-        
+
         # Get forms from files that aren't already in memory
         try:
             if os.path.exists(self.forms_dir):
@@ -141,18 +140,18 @@ class FormGenerator:
                                 })
         except Exception as e:
             self.logger.error(f"Error listing forms from files: {str(e)}")
-        
+
         return forms
 
     def delete_form(self, form_id):
         """Delete a form from memory and file"""
         deleted = False
-        
+
         # Delete from memory
         if hasattr(current_app, 'FORMS_STORAGE') and form_id in current_app.FORMS_STORAGE:
             del current_app.FORMS_STORAGE[form_id]
             deleted = True
-        
+
         # Delete from file
         try:
             file_path = os.path.join(self.forms_dir, f"{form_id}.json")
@@ -162,5 +161,110 @@ class FormGenerator:
                 self.logger.info(f"Form file {form_id}.json deleted")
         except Exception as e:
             self.logger.error(f"Error deleting form file: {str(e)}")
-        
+
         return deleted
+
+    def process_form_submission(self, form_id, submission_data):
+        """Process form submission and save to Monday.com"""
+        try:
+            # Get form data
+            form_data = self.get_form_data(form_id)
+            if not form_data:
+                logging.error(f"Form {form_id} not found")
+                return False
+
+            # Load configuration
+            with open('setup/config.json', 'r', encoding='utf-8') as f:
+                config = json.load(f)
+
+            form_type = form_data.get('type')
+            if not form_type or form_type not in config:
+                logging.error(f"Form type {form_type} not found in config")
+                return False
+
+            form_config = config[form_type]
+
+            # Get destination board (board_b)
+            destination_board = form_config.get('board_b')
+            if not destination_board:
+                logging.error(f"No destination board configured for {form_type}")
+                return False
+
+            # Initialize Monday API
+            monday_api = MondayAPI()
+
+            # Prepare column values for Monday.com
+            column_values = {}
+
+            # Process each question and its submission
+            for question in form_data.get('questions', []):
+                question_id = question.get('id')
+                destination_column = question.get('destination_column')
+                question_type = question.get('type', '')
+
+                if not destination_column or not question_id:
+                    continue
+
+                # Handle Monday column questions (Coluna do Monday)
+                if question_type == 'monday_column':
+                    # For Monday column questions, use the column_value (already fetched from source)
+                    column_value = question.get('column_value', '')
+                    if column_value:
+                        column_values[destination_column] = str(column_value)
+                        logging.info(f"Monday column question {question_id}: saving '{column_value}' to destination column '{destination_column}'")
+                    else:
+                        logging.warning(f"Monday column question {question_id} has no column_value to save")
+                else:
+                    # For other question types, use submitted value
+                    submitted_value = submission_data.get(question_id, "")
+
+                    if submitted_value:
+                        # Format value based on question type
+                        if question_type == 'rating':
+                            # Handle rating questions (1-5 scale)
+                            try:
+                                rating_value = int(submitted_value)
+                                column_values[destination_column] = str(rating_value)
+                            except ValueError:
+                                column_values[destination_column] = submitted_value
+                        elif question_type == 'yesno':
+                            # Handle yes/no questions
+                            column_values[destination_column] = submitted_value
+                        else:
+                            # Handle text, longtext, dropdown questions
+                            column_values[destination_column] = str(submitted_value)
+
+            # Create item name from header data
+            header_data = form_data.get('header_data', {})
+            item_name = f"Avaliação - {header_data.get('Viagem', 'Formulário')}"
+
+            logging.info(f"Creating Monday.com item with values: {column_values}")
+
+            # Create item with all column values at once
+            if column_values:
+                result = monday_api.create_item_with_values(
+                    board_id=destination_board,
+                    item_name=item_name,
+                    column_values=column_values
+                )
+
+                if result and result.get('data', {}).get('create_item'):
+                    item_id = result['data']['create_item']['id']
+                    logging.info(f"Successfully created Monday.com item {item_id} with values")
+                    return True
+                else:
+                    logging.error(f"Failed to create Monday.com item: {result}")
+                    return False
+            else:
+                # Create item without values if no columns to update
+                result = monday_api.create_item(destination_board, item_name)
+                if result:
+                    logging.info(f"Created Monday.com item without column values")
+                    return True
+                else:
+                    logging.error("Failed to create Monday.com item")
+                    return False
+
+        except Exception as e:
+            logging.error(f"Error processing form submission: {str(e)}")
+            return False
