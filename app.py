@@ -85,6 +85,7 @@ def save_config(config):
             # Update cache after successful save
             config_cache = config.copy()
             config_last_modified = time.time()
+            app.logger.info("Configuration saved to setup/config.json successfully")
         else:
             # In production, update the cache but warn about persistence
             config_cache = config.copy()
@@ -92,6 +93,19 @@ def save_config(config):
             app.logger.warning("Production environment: Configuration saved to memory only. Changes will not persist across deployments.")
     except Exception as e:
         app.logger.error(f"Error saving configuration: {str(e)}")
+
+def auto_update_config():
+    """Automatically update config file when changes are detected"""
+    if not os.environ.get('VERCEL'):  # Only in development
+        try:
+            # Force reload and save current config
+            config = load_config()
+            save_config(config)
+            return True
+        except Exception as e:
+            app.logger.error(f"Error in auto_update_config: {str(e)}")
+            return False
+    return False
 
 # Register blueprints
 app.register_blueprint(formguias_bp)
@@ -121,13 +135,19 @@ def config_api():
             config = request.get_json()
             save_config(config)
             
-            if os.environ.get('VERCEL'):
+            # Auto-update config file if in development
+            if not os.environ.get('VERCEL'):
+                auto_update_config()
                 return jsonify({
-                    "message": "Configuration saved to memory only. Changes will not persist across deployments.",
-                    "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy."
+                    "message": "Configuration saved and config file updated successfully",
+                    "environment": "development"
                 })
             else:
-                return jsonify({"message": "Configuration saved successfully"})
+                return jsonify({
+                    "message": "Configuration saved to memory only. Changes will not persist across deployments.",
+                    "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy.",
+                    "environment": "production"
+                })
         except Exception as e:
             app.logger.error(f"Error saving configuration: {str(e)}")
             return jsonify({"error": "Failed to save configuration"}), 500
@@ -155,10 +175,15 @@ def reload_config():
         # Load fresh configuration
         config = load_config()
 
+        # Auto-update config file if in development
+        if not os.environ.get('VERCEL'):
+            auto_update_config()
+
         return jsonify({
             "success": True,
             "message": "Configuration reloaded successfully",
-            "config": config
+            "config": config,
+            "environment": "development" if not os.environ.get('VERCEL') else "production"
         })
     except Exception as e:
         app.logger.error(f"Error reloading config: {str(e)}")
