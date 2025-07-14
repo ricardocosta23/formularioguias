@@ -840,7 +840,7 @@ class AdminInterface {
 
         div.innerHTML = `
             <div class="card h-100">
-                ```text
+                <div class="card-body"></div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="badge bg-${typeColor}">${form.type}</span>
