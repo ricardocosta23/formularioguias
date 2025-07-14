@@ -134,10 +134,10 @@
                                        {% if question.required %}required{% endif %}>
                             </div>
                         </div>
-                    </div>
-                     <!-- Error message for mandatory questions -->
-                    <div class="error-message" id="error-{{ question.id }}" style="display: none;">
-                        <small class="text-danger">* Resposta obrigatória!</small>
+                        <!-- Error message for mandatory questions -->
+                        <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                            <small class="text-danger">* Resposta obrigatória!</small>
+                        </div>
                     </div>
                     {% endif %}
                 {% else %}
@@ -212,10 +212,13 @@
                     </select>
 
                     {% endif %}
-                </div>
-                 <!-- Error message for mandatory questions -->
-                <div class="error-message" id="error-{{ question.id }}" style="display: none;">
-                    <small class="text-danger">* Resposta obrigatória!</small>
+                    
+                    <!-- Error message for mandatory questions -->
+                    {% if question.required %}
+                    <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                        <small class="text-danger">* Resposta obrigatória!</small>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 {% endif %}
@@ -340,95 +343,113 @@
                     return;
                 }
 
-                // Validate only visible required fields
-                const visibleRequiredFields = form.querySelectorAll('input[required], textarea[required], select[required]');
-                let hasValidationErrors = false;
-                let firstInvalidField = null;
-
                 // First, hide all error messages
                 document.querySelectorAll('.error-message').forEach(errorDiv => {
                     errorDiv.style.display = 'none';
                 });
 
-                // Track which radio groups we've already checked
-                const checkedRadioGroups = new Set();
+                let hasValidationErrors = false;
+                let firstInvalidField = null;
 
-                visibleRequiredFields.forEach(field => {
-                    const questionSection = field.closest('.question-section');
-
-                    // If the field is in a conditional section that's hidden, skip validation
-                    if (questionSection && questionSection.style.display === 'none') {
+                // Get all question sections that are visible (not hidden by conditional logic)
+                const visibleQuestionSections = document.querySelectorAll('.question-section');
+                
+                visibleQuestionSections.forEach(questionSection => {
+                    // Skip if this question section is hidden (conditional logic)
+                    if (questionSection.style.display === 'none') {
                         return;
                     }
 
-                    // Check if field is empty and visible
-                    let isEmpty = false;
-                    let questionId = field.name || field.id;
+                    // Find required fields in this section
+                    const requiredFields = questionSection.querySelectorAll('input[required], textarea[required], select[required]');
                     
-                    if (field.type === 'radio') {
-                        // Skip if we already checked this radio group
-                        if (checkedRadioGroups.has(field.name)) {
-                            return;
+                    requiredFields.forEach(field => {
+                        let isEmpty = false;
+                        let questionId = field.name || field.id;
+
+                        // Check if field is empty based on type
+                        if (field.type === 'radio') {
+                            // For radio buttons, check if any radio with the same name is checked
+                            const radioGroup = questionSection.querySelectorAll(`input[name="${field.name}"]`);
+                            isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
+                            questionId = field.name;
+                        } else if (field.type === 'hidden') {
+                            // For hidden rating inputs, check if they have a value
+                            isEmpty = !field.value || field.value.trim() === '';
+                            // For rating fields, extract question ID from input name
+                            if (field.name.endsWith('_input')) {
+                                questionId = field.name.replace('_input', '');
+                            } else {
+                                questionId = field.name;
+                            }
+                        } else {
+                            // For other field types (text, textarea, select), check if value is empty
+                            isEmpty = !field.value || field.value.trim() === '';
                         }
-                        checkedRadioGroups.add(field.name);
-                        
-                        // For radio buttons, check if any radio with the same name is checked
-                        const radioGroup = form.querySelectorAll(`input[name="${field.name}"]`);
-                        isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
-                        questionId = field.name;
-                    } else if (field.type === 'hidden') {
-                        // For hidden rating inputs, check if they have a value
-                        isEmpty = !field.value || field.value.trim() === '';
-                        // For rating fields, the hidden input has name = questionId, but the ID is questionId_input
-                        if (questionId.endsWith('_input')) {
-                            questionId = questionId.replace('_input', '');
+
+                        // If field is empty, show error and mark as invalid
+                        if (isEmpty) {
+                            hasValidationErrors = true;
+                            
+                            // Show error message for this question
+                            const errorDiv = document.getElementById('error-' + questionId);
+                            if (errorDiv) {
+                                errorDiv.style.display = 'block';
+                            }
+                            
+                            // Set first invalid field for scrolling
+                            if (!firstInvalidField) {
+                                firstInvalidField = questionSection;
+                            }
                         }
-                    } else {
-                        // For other field types, check if value is empty
-                        isEmpty = !field.value || field.value.trim() === '';
+                    });
+                });
+
+                // Special handling for radio groups - check each unique radio group only once
+                const radioGroups = new Set();
+                const allRadios = form.querySelectorAll('input[type="radio"][required]');
+                
+                allRadios.forEach(radio => {
+                    const questionSection = radio.closest('.question-section');
+                    
+                    // Skip if this question section is hidden or we already checked this group
+                    if (!questionSection || questionSection.style.display === 'none' || radioGroups.has(radio.name)) {
+                        return;
                     }
                     
-                    // Only check if field is visible (not in a hidden conditional section)
-                    if (isEmpty && field.offsetParent !== null) {
+                    radioGroups.add(radio.name);
+                    
+                    // Check if any radio in this group is checked
+                    const radioGroup = form.querySelectorAll(`input[name="${radio.name}"]`);
+                    const isChecked = Array.from(radioGroup).some(r => r.checked);
+                    
+                    if (!isChecked) {
                         hasValidationErrors = true;
                         
-                        console.log('Validation failed for field:', questionId, 'isEmpty:', isEmpty, 'fieldType:', field.type);
-                        
                         // Show error message
-                        const errorDiv = document.getElementById('error-' + questionId);
+                        const errorDiv = document.getElementById('error-' + radio.name);
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
-                            console.log('Showing error message for:', questionId);
-                        } else {
-                            console.log('Error div not found for question ID:', questionId);
-                            // Try to find error div by searching all error divs
-                            const allErrorDivs = document.querySelectorAll('.error-message');
-                            console.log('Available error divs:', Array.from(allErrorDivs).map(div => div.id));
                         }
                         
                         // Set first invalid field for scrolling
                         if (!firstInvalidField) {
-                            firstInvalidField = field.type === 'hidden' ? 
-                                field.closest('.question-section') || field : field;
+                            firstInvalidField = questionSection;
                         }
                     }
                 });
 
                 if (hasValidationErrors) {
                     if (firstInvalidField) {
-                        // For question sections (rating fields), scroll to the section
-                        const scrollTarget = firstInvalidField.classList?.contains('question-section') ? 
-                            firstInvalidField : firstInvalidField.closest('.question-section') || firstInvalidField;
-                        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Scroll to the first invalid field
+                        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
-                        // Focus on the first input in the section if possible
-                        const firstInput = scrollTarget.querySelector('input, textarea, select');
+                        // Try to focus on the first input in the section
+                        const firstInput = firstInvalidField.querySelector('input, textarea, select');
                         if (firstInput && firstInput.focus) {
                             setTimeout(() => firstInput.focus(), 500);
                         }
                     }
-                    
-                    console.log('Form validation failed. Showing error messages.');
                     return;
                 }
 
