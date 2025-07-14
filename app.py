@@ -1,4 +1,3 @@
-# Updated form submission handler to save all destination columns properly
 import os
 import logging
 import time
@@ -114,8 +113,16 @@ def config_api():
     """API endpoint for managing configurations"""
     if request.method == 'GET':
         try:
-            config = load_config()
-            return jsonify(config)
+            # Load configuration directly from config.json file
+            config_path = os.path.join('setup', 'config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                app.logger.info("Configuration loaded successfully from config.json")
+                return jsonify(config)
+            else:
+                app.logger.error("config.json not found")
+                return jsonify({"error": "Configuration file not found"}), 404
         except Exception as e:
             app.logger.error(f"Error loading config: {str(e)}")
             return jsonify({"error": "Failed to load configuration"}), 500
@@ -161,18 +168,6 @@ def config_api():
         except Exception as e:
             app.logger.error(f"Error saving configuration: {str(e)}")
             return jsonify({"error": f"Failed to save configuration: {str(e)}"}), 500
-
-@app.route('/api/forms', methods=['GET'])
-def list_forms():
-    """List all generated forms"""
-    try:
-        from utils.form_generator import FormGenerator
-        form_generator = FormGenerator()
-        forms = form_generator.list_all_forms()
-        return jsonify(forms)
-    except Exception as e:
-        app.logger.error(f"Error listing forms: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/reload_config', methods=['POST'])
 def reload_config():
@@ -419,6 +414,20 @@ app.store_form_data = store_form_data
 app.get_form_data = get_form_data
 app.load_config = load_config
 app.FORMS_STORAGE = FORMS_STORAGE
+
+
+
+@app.route('/api/forms', methods=['GET'])
+def list_forms():
+    """List all generated forms"""
+    try:
+        from utils.form_generator import FormGenerator
+        form_generator = FormGenerator()
+        forms = form_generator.list_all_forms()
+        return jsonify(forms)
+    except Exception as e:
+        app.logger.error(f"Error listing forms: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
