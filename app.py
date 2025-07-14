@@ -109,28 +109,31 @@ def admin():
     config = load_config()
     return render_template('admin.html', config=config)
 
-@app.route('/api/config', methods=['GET', 'POST'])
-def config_api():
-    """API endpoint for managing configurations"""
-    if request.method == 'GET':
-        config = load_config()
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """Get current configuration"""
+    try:
+        with open('setup/config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
         return jsonify(config)
+    except Exception as e:
+        logging.error(f"Error loading config: {str(e)}")
+        return jsonify({"error": "Failed to load configuration"}), 500
 
-    elif request.method == 'POST':
-        try:
-            config = request.get_json()
-            save_config(config)
-            
-            if os.environ.get('VERCEL'):
-                return jsonify({
-                    "message": "Configuration saved to memory only. Changes will not persist across deployments.",
-                    "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy."
-                })
-            else:
-                return jsonify({"message": "Configuration saved successfully"})
-        except Exception as e:
-            app.logger.error(f"Error saving configuration: {str(e)}")
-            return jsonify({"error": "Failed to save configuration"}), 500
+@app.route('/api/config', methods=['POST'])
+def save_config():
+    """Save configuration"""
+    try:
+        config_data = request.get_json()
+
+        # Save to config.json
+        with open('setup/config.json', 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+        return jsonify({"success": True, "message": "Configuration saved successfully"})
+    except Exception as e:
+        logging.error(f"Error saving config: {str(e)}")
+        return jsonify({"error": "Failed to save configuration"}), 500
 
 @app.route('/api/forms', methods=['GET'])
 def list_forms():
@@ -184,7 +187,7 @@ def display_form(form_id):
         from utils.form_generator import FormGenerator
         form_generator = FormGenerator()
         form_data = form_generator.get_form_data(form_id)
-        
+
         if not form_data:
             return "Form not found", 404
 
@@ -291,13 +294,13 @@ def process_form_background(form_id, submission_data, stored_form_data):
                 app.logger.info(f"Column values: {column_values}")
 
                 create_result = monday_api.create_item_with_values(board_b, item_name, column_values)
-                
+
                 if create_result and create_result.get('create_item', {}).get('id'):
                     new_item_id = create_result['create_item']['id']
                     app.logger.info(f"Processing - Successfully created item with ID: {new_item_id} and all column values")
                 else:
                     app.logger.error("Processing - Failed to create item in Board B with values")
-                    
+
             else:
                 app.logger.error("Processing - Missing item_id or board_b configuration")
         else:
@@ -315,7 +318,7 @@ def submit_form(form_id):
         from utils.form_generator import FormGenerator
         form_generator = FormGenerator()
         form_data = form_generator.get_form_data(form_id)
-        
+
         if not form_data:
             return jsonify({"error": "Form not found"}), 404
 
