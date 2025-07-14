@@ -279,21 +279,7 @@ def process_form_background(form_id, submission_data, stored_form_data):
 
                     # For Monday column questions, save both the response and the column value
                     if question_type == 'monday_column':
-                        # For Monday column questions, the main value to save is the column_value (from source column)
-                        column_value = question.get('column_value', '')
-                        source_column = question.get('source_column', '')
-                        
-                        # If we have a valid column value from the source, save it to destination
-                        if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
-                            if destination_column and destination_column.strip():
-                                column_values[destination_column.strip()] = column_value
-                                app.logger.info(f"Saving Monday column value: {column_value} to destination: {destination_column}")
-                            # If no destination column specified, use source column as destination
-                            elif source_column and source_column.strip():
-                                column_values[source_column.strip()] = column_value
-                                app.logger.info(f"Saving Monday column value: {column_value} to source column: {source_column}")
-                        
-                        # Also save user's rating/response if they provided one
+                        # Save the user's response (rating)
                         response_value = submission_data.get(question_id)
                         if response_value is not None and str(response_value).strip():
                             response_str = str(response_value).strip()
@@ -304,14 +290,14 @@ def process_form_background(form_id, submission_data, stored_form_data):
                             elif response_str.lower() == "no":
                                 response_str = "Não"
 
-                            # Save the response to a separate column if specified
-                            if question.get('question_destination_column') and question.get('question_destination_column').strip():
-                                column_values[question.get('question_destination_column').strip()] = response_str
+                            if destination_column and destination_column.strip():
+                                column_values[destination_column.strip()] = response_str
 
-                        # Save the column value (question text) if configured to a separate destination
-                        if question.get('question_destination_column') and question.get('question_destination_column').strip():
+                        # Save the column value (question text) if configured
+                        if question_destination_column and question_destination_column.strip():
+                            column_value = question.get('column_value', '')
                             if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
-                                column_values[question.get('question_destination_column').strip()] = column_value
+                                column_values[question_destination_column.strip()] = column_value
 
                     else:
                         # For regular questions (yesno, rating, text, longtext, dropdown)
