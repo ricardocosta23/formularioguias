@@ -270,6 +270,35 @@ function createQuestionElement(formType, question, index) {
                     </div>
                 </div>
                 ` : ''}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Depende da pergunta (Sim/Não):</label>
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
+                            <option value="">Nenhuma</option>
+                            ${getAllYesNoQuestions(formType).map(q => 
+                                `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mostrar se a resposta for:</label>
+                        <select class="form-control conditional-show-if" onchange="updateQuestionConditional('${formType}', ${index}, 'show_if', this.value)">
+                            <option value="Sim" ${question.conditional && question.conditional.show_if === 'Sim' ? 'selected' : ''}>Sim</option>
+                            <option value="Não" ${question.conditional && question.conditional.show_if === 'Não' ? 'selected' : ''}>Não</option>
+                        </select>
+                    </div>
+                </div>
+
+                ${question.conditional ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <strong>Pergunta Condicional:</strong> Depende de "${question.conditional.depends_on}"
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
     }
@@ -335,76 +364,49 @@ function getCurrentQuestions(formType) {
     const questions = [];
     const questionElements = questionsContainer.querySelectorAll('.question-item');
 
-    questionElements.forEach((element, index) => {
-        const questionId = element.getAttribute('data-question-id');
-
-        if (element.querySelector('.divider-question')) {
-            // Divider question
-            const titleInput = element.querySelector('input[type="text"]');
-            questions.push({
-                id: questionId,
-                type: 'divider',
-                title: titleInput ? titleInput.value : ''
-            });
-        } else {
-            // Regular question
-            const typeSelect = element.querySelector('select');
-            const requiredSelect = element.querySelectorAll('select')[1];
-            const textTextarea = element.querySelector('textarea');
-            const dropdownInput = element.querySelector('input[placeholder*="Opção"]');
-            const destinationInput = element.querySelector('input[placeholder*="text_mksd"]');
-
-            const question = {
-                id: questionId,
-                type: typeSelect ? typeSelect.value : 'text',
-                text: textTextarea ? textTextarea.value : '',
-                required: requiredSelect ? requiredSelect.value === 'true' : false,
-                source: 'manual'
+    questions.forEach((element, index) => {
+            const questionData = {
+                id: element.querySelector('input[name="question_id"]')?.value || `question_${index}`,
+                text: element.querySelector('input[name="question_text"]')?.value || '',
+                type: element.querySelector('select[name="question_type"]')?.value || 'yesno',
+                required: element.querySelector('input[name="required"]')?.checked || false,
+                destination_column: element.querySelector('input[name="destination_column"]')?.value || ''
             };
 
-            if (destinationInput && destinationInput.value) {
-                question.destination_column = destinationInput.value;
+            // Handle specific fields for different question types
+            if (questionData.type === 'dropdown') {
+                const optionsTextarea = element.querySelector('textarea[name="dropdown_options"]');
+                if (optionsTextarea) {
+                    questionData.options = optionsTextarea.value.split('\n').filter(option => option.trim());
+                }
             }
 
-            if (dropdownInput && dropdownInput.value) {
-                question.dropdown_options = dropdownInput.value;
+            if (questionData.type === 'monday_column') {
+                const boardSelect = element.querySelector('select[name="board_select"]');
+                const columnSelect = element.querySelector('select[name="column_select"]');
+
+                if (boardSelect) {
+                    questionData.board_id = boardSelect.value;
+                }
+                if (columnSelect) {
+                    questionData.column_id = columnSelect.value;
+                }
+
+                // Handle text destination column for monday_column type questions
+                const textDestinationInput = element.querySelector('input[placeholder*="text_mkhotel_name"]');
+                if (textDestinationInput) {
+                    questionData.text_destination_column = textDestinationInput.value;
+                }
+
+                // Handle rating destination column for monday_column type questions
+                const ratingDestinationInput = element.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
+                if (ratingDestinationInput) {
+                    questionData.rating_destination_column = ratingDestinationInput.value;
+                }
             }
 
-            // Handle source column for monday_column type questions
-            const sourceColumnInput = element.querySelector('input[placeholder*="text_mkrj9z52"]');
-            if (sourceColumnInput && sourceColumnInput.value) {
-                question.source_column = sourceColumnInput.value;
-            }
-
-            // Handle text destination column for monday_column type questions
-            const textDestinationInput = element.querySelector('input[placeholder*="text_mkhotel_name"]');
-            if (textDestinationInput) {
-                question.text_destination_column = textDestinationInput.value;
-            }
-
-            // Handle rating destination column for monday_column type questions
-            const ratingDestinationInput = element.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
-            if (ratingDestinationInput) {
-                question.rating_destination_column = ratingDestinationInput.value;
-            }
-
-            // Handle conditional question data
-            const dependsOnSelect = element.querySelector('.conditional-depends-on');
-            const showIfSelect = element.querySelector('.conditional-show-if');
-
-            if (dependsOnSelect && dependsOnSelect.value) {
-                question.conditional = {
-                    depends_on: dependsOnSelect.value,
-                    show_if: showIfSelect ? showIfSelect.value : 'Sim'
-                };
-                question.is_conditional = true;
-            } else {
-                question.is_conditional = false;
-            }
-
-            questions.push(question);
-        }
-    });
+            questions.push(questionData);
+        });
 
     return questions;
 }
@@ -821,7 +823,7 @@ function createQuestionElement(formType, question, index) {
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Depende da pergunta (Sim/Não):</label>
-                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}', 'depends_on', this.value)">
                             <option value="">Nenhuma</option>
                             ${getAllYesNoQuestions(formType).map(q => 
                                 `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
