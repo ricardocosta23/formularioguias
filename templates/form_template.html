@@ -13,6 +13,32 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .submit-button.loading {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .submit-button.loading:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .submit-button.loading i {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 <body class="form-{{ form_data.type }}">
     <div class="survey-container">
@@ -271,8 +297,26 @@
             feather.replace();
 
             const form = document.getElementById('surveyForm');
+            const submitButton = document.querySelector('.submit-button');
+            let isSubmitting = false;
+
             form.addEventListener('submit', function(event) {
                 event.preventDefault(); // Prevent default form submission
+
+                // Prevent multiple submissions
+                if (isSubmitting) {
+                    return;
+                }
+
+                isSubmitting = true;
+
+                // Disable submit button and show loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i data-feather="loader" class="me-2"></i>Enviando...';
+                submitButton.classList.add('loading');
+
+                // Refresh feather icons for the new loader icon
+                feather.replace();
 
                 const formData = new FormData(form);
 
@@ -284,17 +328,25 @@
                     },
                     body: JSON.stringify(Object.fromEntries(formData))
                 })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Form submitted successfully!');
-                        // Optionally redirect or clear the form
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to success page
+                        window.location.href = '/success';
                     } else {
-                        alert('Error submitting form.');
+                        throw new Error(data.error || 'Error submitting form');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while submitting the form.');
+                    alert('Ocorreu um erro ao enviar o formulário. Tente novamente.');
+                    
+                    // Re-enable submit button on error
+                    isSubmitting = false;
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i data-feather="send" class="me-2"></i>Enviar Formulário';
+                    submitButton.classList.remove('loading');
+                    feather.replace();
                 });
             });
         });
