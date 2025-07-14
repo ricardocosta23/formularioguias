@@ -230,8 +230,23 @@ function createQuestionElement(formType, question, index) {
                         <small class="form-text text-muted">ID da coluna do Monday.com que será usada como nome/valor da pergunta</small>
                     </div>
                 </div>
-                ` : ''}
-
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Texto:</label>
+                        <input type="text" class="form-control" value="${question.text_destination_column || question.destination_column || ''}"
+                               placeholder="Ex: text_mkhotel_name"
+                               onchange="updateQuestionField('${formType}', ${index}, 'text_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar o nome/texto do item</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Avaliação:</label>
+                        <input type="text" class="form-control" value="${question.rating_destination_column || ''}"
+                               placeholder="Ex: numeric_mkrjpfxv"
+                               onchange="updateQuestionField('${formType}', ${index}, 'rating_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar a nota (1-10)</small>
+                    </div>
+                </div>
+                ` : `
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Coluna de Destino (Monday):</label>
@@ -244,13 +259,14 @@ function createQuestionElement(formType, question, index) {
                         <input type="text" class="form-control" value="${question.id || ''}" readonly>
                     </div>
                 </div>
+                `}
 
-                ${question.conditional ? `
+                ${question.type !== 'monday_column' ? `
                 <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            <strong>Pergunta Condicional:</strong> Depende de "${question.conditional.depends_on}"
-                        </div>
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
                     </div>
                 </div>
                 ` : ''}
@@ -363,7 +379,7 @@ function getCurrentQuestions(formType) {
             // Handle conditional question data
             const dependsOnSelect = element.querySelector('.conditional-depends-on');
             const showIfSelect = element.querySelector('.conditional-show-if');
-            
+
             if (dependsOnSelect && dependsOnSelect.value) {
                 question.conditional = {
                     depends_on: dependsOnSelect.value,
@@ -755,8 +771,23 @@ function createQuestionElement(formType, question, index) {
                         <small class="form-text text-muted">ID da coluna do Monday.com que será usada como nome/valor da pergunta</small>
                     </div>
                 </div>
-                ` : ''}
-
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Texto:</label>
+                        <input type="text" class="form-control" value="${question.text_destination_column || question.destination_column || ''}"
+                               placeholder="Ex: text_mkhotel_name"
+                               onchange="updateQuestionField('${formType}', ${index}, 'text_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar o nome/texto do item</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino - Avaliação:</label>
+                        <input type="text" class="form-control" value="${question.rating_destination_column || ''}"
+                               placeholder="Ex: numeric_mkrjpfxv"
+                               onchange="updateQuestionField('${formType}', ${index}, 'rating_destination_column', this.value)">
+                        <small class="form-text text-muted">Onde salvar a nota (1-10)</small>
+                    </div>
+                </div>
+                ` : `
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Coluna de Destino (Monday):</label>
@@ -769,6 +800,17 @@ function createQuestionElement(formType, question, index) {
                         <input type="text" class="form-control" value="${question.id || ''}" readonly>
                     </div>
                 </div>
+                `}
+
+                ${question.type !== 'monday_column' ? `
+                <div class="row mt-3">
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
+                    </div>
+                </div>
+                ` : ''}
 
                 <div class="row mt-3">
                     <div class="col-md-6">
