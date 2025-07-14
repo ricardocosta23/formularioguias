@@ -302,27 +302,43 @@ class MondayAPI:
         logging.info(f"Updated column {column_id} for item {item_id} in board {board_id} with value: {value}")
         return result
 
-    def create_item(self, board_id, item_name, column_values=None):
-        """Create a new item in a Monday.com board"""
-        query = """
-        mutation CreateItem($boardId: ID!, $itemName: String!, $columnValues: JSON) {
-            create_item(
-                board_id: $boardId,
-                item_name: $itemName,
-                column_values: $columnValues
-            ) {
+    def create_item(self, board_id, item_name, group_id=None):
+        """Create a new item in Monday.com board"""
+        group_clause = f', group_id: "{group_id}"' if group_id else ""
+
+        mutation = f"""
+        mutation {{
+            create_item (board_id: {board_id}, item_name: "{item_name}"{group_clause}) {{
                 id
                 name
-            }
-        }
+            }}
+        }}
         """
 
-        variables = {
-            "boardId": board_id,
-            "itemName": item_name,
-            "columnValues": json.dumps(column_values) if column_values else None
-        }
+        return self._make_request(mutation)
 
-        result = self.execute_query(query, variables)
-        logging.info(f"Created new item '{item_name}' in board {board_id}")
-        return result
+    def create_item_with_values(self, board_id, item_name, column_values, group_id=None):
+        """Create a new item with multiple column values in a single request"""
+        try:
+            # Prepare column values as JSON string
+            column_values_json = json.dumps(column_values)
+
+            group_clause = f', group_id: "{group_id}"' if group_id else ""
+
+            mutation = f"""
+            mutation {{
+                create_item (
+                    board_id: {board_id}, 
+                    item_name: "{item_name}",
+                    column_values: "{column_values_json.replace('"', '\\"')}"{group_clause}
+                ) {{
+                    id
+                    name
+                }}
+            }}
+            """
+
+            return self._make_request(mutation)
+        except Exception as e:
+            logging.error(f"Error creating item with values: {str(e)}")
+            return None
