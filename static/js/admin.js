@@ -1000,6 +1000,9 @@ class AdminInterface {
 
     async saveConfiguration() {
         try {
+            // Save questions for the current tab first
+            this.saveQuestions(this.currentTab);
+
             // Update basic config from inputs
             ['guias', 'clientes', 'fornecedores'].forEach(formType => {
                 if (!this.config[formType]) this.config[formType] = {};
@@ -1015,6 +1018,9 @@ class AdminInterface {
                 // Update questions title
                 const questionsTitle = document.getElementById(`${formType}-questions-title`);
                 if (questionsTitle) this.config[formType].questions_title = questionsTitle.value;
+
+                // Save questions for all form types
+                this.saveQuestions(formType);
             });
 
             const response = await fetch('/api/config', {
@@ -1028,12 +1034,11 @@ class AdminInterface {
             if (response.ok) {
                 // Reload configuration after saving
                 const reloadResponse = await fetch('/api/reload_config', { method: 'POST' });
-		if (reloadResponse.ok) {
+                if (reloadResponse.ok) {
                     this.showNotification('Configuração salva e recarregada com sucesso!', 'success');
                 } else {
                     this.showNotification('Configuração salva, mas erro ao recarregar!', 'warning');
                 }
-
             } else {
                 throw new Error('Failed to save configuration');
             }
