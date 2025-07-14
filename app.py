@@ -123,12 +123,12 @@ def config_api():
     elif request.method == 'POST':
         try:
             config_data = request.get_json()
-            
+
             # Update the cache first
             global config_cache, config_last_modified
             config_cache = config_data.copy()
             config_last_modified = time.time()
-            
+
             # Check if we're in Vercel environment first
             if os.environ.get('VERCEL'):
                 app.logger.info("Configuration saved to memory only (Vercel environment)")
@@ -142,10 +142,10 @@ def config_api():
                 try:
                     config_path = os.path.join(os.path.dirname(__file__), 'setup', 'config.json')
                     os.makedirs(os.path.dirname(config_path), exist_ok=True)
-                    
+
                     with open(config_path, 'w', encoding='utf-8') as f:
                         json.dump(config_data, f, indent=2, ensure_ascii=False)
-                    
+
                     app.logger.info("Configuration saved successfully to config.json")
                     return jsonify({
                         "success": True,
@@ -354,9 +354,61 @@ def submit_form(form_id):
 
         app.logger.info(f"Form submission for {form_id}: {submission_data}")
 
+        # Load configuration
+        config = load_config()
+        form_type = form_data.get('type')
+
+        # Monday API setup
+        from utils.monday_api import MondayAPI
+        monday_api = MondayAPI()
+
+        # Get the item ID from webhook data
+        webhook_data = form_data.get('webhook_data', {})
+        item_id = webhook_data.get('event', {}).get('pulseId')
+
+        form_responses = submission_data  # Assuming submission data is a dict of question_id: response
+
+        # Process form submissions and update Monday.com
+        if form_data and form_data.get('questions'):
+            board_id = None
+            if form_type == 'guias':
+                board_id = config.get('guias', {}).get('board_b')
+            elif form_type == 'clientes':
+                board_id = config.get('clientes', {}).get('board_b')
+            elif form_type == 'fornecedores':
+                board_id = config.get('fornecedores', {}).get('board_b')
+
+            if board_id and item_id:
+                for question in form_data['questions']:
+                    question_id = question.get('id')
+                    destination_column = question.get('destination_column')
+                    question_type = question.get('type')
+
+                    # For Monday column questions, the value is already in the form response
+                    # For other questions, use the form response
+                    if question_id in form_responses and destination_column:
+                        value_to_save = form_responses[question_id]
+
+                        # Skip empty values for Monday column questions since they should already have the source column data
+                        if question_type == 'monday_column' and not value_to_save:
+                            app.logger.warning(f"Skipping empty Monday column question {question_id}")
+                            continue
+
+                        try:
+                            monday_api.update_item_column(
+                                board_id=board_id,
+                                item_id=item_id,
+                                column_id=destination_column,
+                                value=value_to_save
+                            )
+                            app.logger.info(f"Updated Monday column {destination_column} with value: {value_to_save}")
+                        except Exception as e:
+                            app.logger.error(f"Failed to update Monday column {destination_column}: {str(e)}")
+                            continue
+
         # Process form submission immediately for better reliability
         try:
-            process_form_background(form_id, submission_data, form_data)
+            # process_form_background(form_id, submission_data, form_data)
 
             return jsonify({
                 "success": True,
