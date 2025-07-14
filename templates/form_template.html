@@ -135,9 +135,11 @@
                             </div>
                         </div>
                         <!-- Error message for mandatory questions -->
+                        {% if question.required %}
                         <div class="error-message" id="error-{{ question.id }}" style="display: none;">
                             <small class="text-danger">* Resposta obrigatória!</small>
                         </div>
+                        {% endif %}
                     </div>
                     {% endif %}
                 {% else %}
