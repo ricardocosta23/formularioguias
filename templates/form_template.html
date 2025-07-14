@@ -350,20 +350,196 @@
             }
         }
 
-        // Test function to show all error messages (for debugging)
-        function testErrorMessages() {
-            console.log('Testing error messages...');
-            const errorDivs = document.querySelectorAll('.error-message');
-            console.log('Found error divs:', errorDivs.length);
-            errorDivs.forEach((div, index) => {
-                console.log(`Error div ${index}:`, div.id, div);
-                div.style.display = 'block';
-                div.classList.add('show');
+        // Comprehensive debugging system
+        function enableDebugMode() {
+            window.formDebugMode = true;
+            console.log('🔍 FORM DEBUG MODE ENABLED');
+            
+            // Add visual indicator
+            const debugIndicator = document.createElement('div');
+            debugIndicator.id = 'debug-indicator';
+            debugIndicator.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: #ff4444;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                z-index: 9999;
+                font-family: monospace;
+            `;
+            debugIndicator.textContent = 'DEBUG MODE';
+            document.body.appendChild(debugIndicator);
+        }
+
+        function logDebug(message, data = null) {
+            if (window.formDebugMode) {
+                console.log(`🔍 DEBUG: ${message}`, data || '');
+            }
+        }
+
+        function analyzeFormStructure() {
+            console.log('📊 FORM STRUCTURE ANALYSIS');
+            console.log('==========================');
+            
+            // Analyze all question sections
+            const questionSections = document.querySelectorAll('.question-section');
+            console.log(`Found ${questionSections.length} question sections`);
+            
+            questionSections.forEach((section, index) => {
+                console.log(`\n--- Section ${index + 1} ---`);
+                console.log('Section element:', section);
+                console.log('Display style:', window.getComputedStyle(section).display);
+                console.log('Is visible:', section.offsetHeight > 0);
+                
+                // Check for inputs in this section
+                const inputs = section.querySelectorAll('input, textarea, select');
+                console.log(`Inputs found: ${inputs.length}`);
+                
+                inputs.forEach((input, inputIndex) => {
+                    console.log(`  Input ${inputIndex + 1}:`, {
+                        type: input.type,
+                        name: input.name,
+                        id: input.id,
+                        required: input.required,
+                        value: input.value,
+                        checked: input.checked
+                    });
+                });
+                
+                // Check for error div
+                const errorDiv = section.querySelector('.error-message');
+                if (errorDiv) {
+                    console.log(`Error div found:`, {
+                        id: errorDiv.id,
+                        display: errorDiv.style.display,
+                        computed_display: window.getComputedStyle(errorDiv).display,
+                        classes: errorDiv.className
+                    });
+                } else {
+                    console.log('❌ No error div found in this section');
+                }
+            });
+            
+            // Analyze all error divs
+            const allErrorDivs = document.querySelectorAll('.error-message');
+            console.log(`\n📋 ALL ERROR DIVS (${allErrorDivs.length})`);
+            allErrorDivs.forEach((div, index) => {
+                console.log(`Error div ${index + 1}:`, {
+                    id: div.id,
+                    display: div.style.display,
+                    computed_display: window.getComputedStyle(div).display,
+                    parent: div.parentElement?.className || 'no parent'
+                });
             });
         }
 
-        // Add test function to window for debugging
+        function testErrorMessages() {
+            console.log('🧪 TESTING ERROR MESSAGES');
+            console.log('=========================');
+            
+            const errorDivs = document.querySelectorAll('.error-message');
+            console.log(`Found ${errorDivs.length} error divs`);
+            
+            if (errorDivs.length === 0) {
+                console.error('❌ NO ERROR DIVS FOUND! This is the problem.');
+                return;
+            }
+            
+            errorDivs.forEach((div, index) => {
+                console.log(`Testing error div ${index + 1}:`, div.id);
+                div.style.display = 'block';
+                div.classList.add('show');
+                console.log('✅ Error div should now be visible');
+            });
+        }
+
+        function testFormValidation() {
+            console.log('🔬 TESTING FORM VALIDATION');
+            console.log('===========================');
+            
+            // Simulate form submission validation
+            const visibleQuestionSections = Array.from(document.querySelectorAll('.question-section')).filter(section => {
+                return section.style.display !== 'none';
+            });
+            
+            console.log(`Found ${visibleQuestionSections.length} visible question sections`);
+            
+            visibleQuestionSections.forEach((section, index) => {
+                console.log(`\n--- Validating Section ${index + 1} ---`);
+                
+                let sectionHasError = false;
+                let questionId = null;
+                
+                // Check radio buttons
+                const radioButtons = section.querySelectorAll('input[type="radio"][required]');
+                if (radioButtons.length > 0) {
+                    const radioName = radioButtons[0].name;
+                    const isChecked = Array.from(radioButtons).some(radio => radio.checked);
+                    console.log(`Radio group "${radioName}": ${isChecked ? 'VALID' : 'INVALID'}`);
+                    
+                    if (!isChecked) {
+                        sectionHasError = true;
+                        questionId = radioName;
+                    }
+                }
+                
+                // Check hidden inputs (ratings)
+                const ratingInput = section.querySelector('input[type="hidden"][required]');
+                if (ratingInput && !sectionHasError) {
+                    const isEmpty = !ratingInput.value || ratingInput.value.trim() === '';
+                    console.log(`Rating input "${ratingInput.name}": ${isEmpty ? 'INVALID' : 'VALID'} (value: "${ratingInput.value}")`);
+                    
+                    if (isEmpty) {
+                        sectionHasError = true;
+                        questionId = ratingInput.name.replace('_input', '');
+                    }
+                }
+                
+                // Check text fields
+                const textFields = section.querySelectorAll('input[type="text"][required], textarea[required], select[required]');
+                textFields.forEach(field => {
+                    if (!sectionHasError) {
+                        const isEmpty = !field.value || field.value.trim() === '';
+                        console.log(`Text field "${field.name}": ${isEmpty ? 'INVALID' : 'VALID'} (value: "${field.value}")`);
+                        
+                        if (isEmpty) {
+                            sectionHasError = true;
+                            questionId = field.name || field.id;
+                        }
+                    }
+                });
+                
+                if (sectionHasError) {
+                    console.log(`❌ Section ${index + 1} has validation error for question: ${questionId}`);
+                    
+                    // Try to find and show error message
+                    const errorDivId = 'error-' + questionId;
+                    const errorDiv = document.getElementById(errorDivId);
+                    
+                    console.log(`Looking for error div: ${errorDivId}`);
+                    console.log(`Found error div:`, errorDiv);
+                    
+                    if (errorDiv) {
+                        errorDiv.style.display = 'block';
+                        errorDiv.classList.add('show');
+                        console.log('✅ Error message displayed');
+                    } else {
+                        console.error(`❌ Error div not found: ${errorDivId}`);
+                    }
+                } else {
+                    console.log(`✅ Section ${index + 1} is valid`);
+                }
+            });
+        }
+
+        // Add all functions to window for easy access
+        window.enableDebugMode = enableDebugMode;
+        window.analyzeFormStructure = analyzeFormStructure;
         window.testErrorMessages = testErrorMessages;
+        window.testFormValidation = testFormValidation;
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -371,7 +547,15 @@
             feather.replace();
             
             // Log for debugging
-            console.log('Page loaded, found error divs:', document.querySelectorAll('.error-message').length);
+            console.log('🎯 PAGE LOADED - FORM INITIALIZATION');
+            console.log('====================================');
+            console.log('Found error divs:', document.querySelectorAll('.error-message').length);
+            
+            // Auto-enable debug mode (remove this line in production)
+            enableDebugMode();
+            
+            // Log initial form structure
+            setTimeout(analyzeFormStructure, 1000);
 
             const form = document.getElementById('surveyForm');
             const submitButton = document.querySelector('.submit-button');
@@ -388,13 +572,16 @@
                 // First, hide all error messages
                 document.querySelectorAll('.error-message').forEach(errorDiv => {
                     errorDiv.style.display = 'none';
+                    errorDiv.classList.remove('show');
                 });
 
                 let hasValidationErrors = false;
                 let firstInvalidField = null;
 
                 // Debug logging
-                console.log('Starting form validation...');
+                console.log('🚀 FORM SUBMISSION STARTED');
+                console.log('===========================');
+                logDebug('Starting form validation...');
 
                 // Get all visible question sections
                 const visibleQuestionSections = Array.from(document.querySelectorAll('.question-section')).filter(section => {
@@ -402,6 +589,7 @@
                 });
 
                 console.log('Found visible question sections:', visibleQuestionSections.length);
+                logDebug('Visible question sections', visibleQuestionSections.length);
 
                 // Track processed radio groups to avoid duplicates
                 const processedRadioGroups = new Set();
@@ -462,31 +650,62 @@
                     if (sectionHasError && questionId) {
                         hasValidationErrors = true;
                         
-                        console.log('Showing error for question ID:', questionId);
+                        console.log('🚨 VALIDATION ERROR DETECTED');
+                        console.log('Question ID:', questionId);
+                        console.log('Section:', questionSection);
+                        
+                        logDebug('Showing error for question ID', questionId);
                         
                         // Try to find error div with debug logging
                         const errorDivId = 'error-' + questionId;
                         console.log('Looking for error div with ID:', errorDivId);
+                        logDebug('Error div ID', errorDivId);
                         
                         const errorDiv = document.getElementById(errorDivId);
                         console.log('Found error div:', errorDiv);
                         
                         if (errorDiv) {
+                            console.log('✅ Error div found, displaying...');
                             errorDiv.style.display = 'block';
                             errorDiv.classList.add('show');
+                            // Force visibility with important
+                            errorDiv.style.setProperty('display', 'block', 'important');
                             console.log('Error message shown for:', questionId);
+                            console.log('Error div final state:', {
+                                display: errorDiv.style.display,
+                                computed: window.getComputedStyle(errorDiv).display,
+                                classes: errorDiv.className
+                            });
+                            logDebug('Error message displayed successfully', questionId);
                         } else {
-                            console.error('Error div not found for question ID:', questionId);
+                            console.error('❌ Error div not found for question ID:', questionId);
                             // List all available error divs for debugging
                             const allErrorDivs = document.querySelectorAll('[id^="error-"]');
                             console.log('Available error divs:', Array.from(allErrorDivs).map(div => div.id));
                             
+                            // More aggressive search
+                            const allDivs = document.querySelectorAll('div');
+                            const errorDivs = Array.from(allDivs).filter(div => div.id && div.id.startsWith('error-'));
+                            console.log('All divs with error- prefix:', errorDivs.map(div => div.id));
+                            
                             // Fallback: create and show error message directly in the section
                             const fallbackError = document.createElement('div');
                             fallbackError.className = 'error-message show';
+                            fallbackError.style.cssText = `
+                                display: block !important;
+                                margin-top: 8px;
+                                padding: 8px 12px;
+                                background-color: rgba(220, 53, 69, 0.1);
+                                border-left: 4px solid #dc3545;
+                                border-radius: 4px;
+                                color: #dc3545;
+                                font-weight: 600;
+                                font-size: 0.875rem;
+                            `;
                             fallbackError.innerHTML = '<small class="text-danger">* Resposta obrigatória!</small>';
                             questionSection.appendChild(fallbackError);
-                            console.log('Created fallback error message for:', questionId);
+                            console.log('✅ Created fallback error message for:', questionId);
+                            logDebug('Fallback error created', questionId);
                         }
                         
                         // Set first invalid field for scrolling
