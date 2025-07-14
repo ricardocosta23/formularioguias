@@ -38,6 +38,17 @@
         .submit-button.loading i {
             animation: spin 1s linear infinite;
         }
+
+        .error-message {
+            margin-top: 5px;
+            padding: 5px 0;
+        }
+
+        .error-message .text-danger {
+            color: #dc3545 !important;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body class="form-{{ form_data.type }}">
@@ -123,10 +134,10 @@
                                        {% if question.required %}required{% endif %}>
                             </div>
                         </div>
-                         <!-- Error message for mandatory questions -->
-                        <div class="error-message" id="error-{{ question.id }}" style="display: none;">
-                            <small class="text-danger">Resposta obrigatória!</small>
-                        </div>
+                    </div>
+                     <!-- Error message for mandatory questions -->
+                    <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                        <small class="text-danger">* Resposta obrigatória!</small>
                     </div>
                     {% endif %}
                 {% else %}
@@ -201,10 +212,10 @@
                     </select>
 
                     {% endif %}
-                     <!-- Error message for mandatory questions -->
-                        <div class="error-message" id="error-{{ question.id }}" style="display: none;">
-                            <small class="text-danger">Resposta obrigatória!</small>
-                        </div>
+                </div>
+                 <!-- Error message for mandatory questions -->
+                <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                    <small class="text-danger">* Resposta obrigatória!</small>
                 </div>
                 {% endif %}
                 {% endif %}
@@ -350,7 +361,22 @@
                     }
 
                     // Check if field is empty and visible
-                    if (!field.value.trim() && field.offsetParent !== null) {
+                    let isEmpty = false;
+                    
+                    if (field.type === 'radio') {
+                        // For radio buttons, check if any radio with the same name is checked
+                        const radioGroup = form.querySelectorAll(`input[name="${field.name}"]`);
+                        isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
+                        // Only check the first radio button in the group to avoid duplicates
+                        if (field !== radioGroup[0]) {
+                            return;
+                        }
+                    } else {
+                        // For other field types, check if value is empty
+                        isEmpty = !field.value || !field.value.trim();
+                    }
+                    
+                    if (isEmpty && field.offsetParent !== null) {
                         hasValidationErrors = true;
                         
                         // Get the question ID from the name attribute or field ID
@@ -364,6 +390,9 @@
                         const errorDiv = document.getElementById('error-' + questionId);
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
+                            console.log('Showing error for:', questionId);
+                        } else {
+                            console.log('Error div not found for:', questionId);
                         }
                         
                         // Set first invalid field for scrolling
