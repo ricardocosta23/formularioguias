@@ -109,31 +109,32 @@ def admin():
     config = load_config()
     return render_template('admin.html', config=config)
 
-@app.route('/api/config', methods=['GET'])
-def get_config():
-    """Get current configuration"""
-    try:
-        with open('setup/config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        return jsonify(config)
-    except Exception as e:
-        logging.error(f"Error loading config: {str(e)}")
-        return jsonify({"error": "Failed to load configuration"}), 500
+@app.route('/api/config', methods=['GET', 'POST'])
+def config_api():
+    """API endpoint for managing configurations"""
+    if request.method == 'GET':
+        try:
+            config = load_config()
+            return jsonify(config)
+        except Exception as e:
+            app.logger.error(f"Error loading config: {str(e)}")
+            return jsonify({"error": "Failed to load configuration"}), 500
 
-@app.route('/api/config', methods=['POST'])
-def save_config():
-    """Save configuration"""
-    try:
-        config_data = request.get_json()
-
-        # Save to config.json
-        with open('setup/config.json', 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, indent=2, ensure_ascii=False)
-
-        return jsonify({"success": True, "message": "Configuration saved successfully"})
-    except Exception as e:
-        logging.error(f"Error saving config: {str(e)}")
-        return jsonify({"error": "Failed to save configuration"}), 500
+    elif request.method == 'POST':
+        try:
+            config_data = request.get_json()
+            save_config(config_data)
+            
+            if os.environ.get('VERCEL'):
+                return jsonify({
+                    "message": "Configuration saved to memory only. Changes will not persist across deployments.",
+                    "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy."
+                })
+            else:
+                return jsonify({"message": "Configuration saved successfully"})
+        except Exception as e:
+            app.logger.error(f"Error saving configuration: {str(e)}")
+            return jsonify({"error": "Failed to save configuration"}), 500
 
 @app.route('/api/forms', methods=['GET'])
 def list_forms():
