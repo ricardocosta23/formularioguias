@@ -325,12 +325,15 @@ class MondayAPI:
 
             group_clause = f', group_id: "{group_id}"' if group_id else ""
 
+            # Escape quotes in column_values_json
+            escaped_column_values = column_values_json.replace('"', '\\"')
+            
             mutation = f"""
             mutation {{
                 create_item (
                     board_id: {board_id}, 
                     item_name: "{item_name}",
-                    column_values: "{column_values_json.replace('"', '\\"')}"{group_clause}
+                    column_values: "{escaped_column_values}"{group_clause}
                 ) {{
                     id
                     name
