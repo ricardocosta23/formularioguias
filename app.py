@@ -1,3 +1,4 @@
+# Updated form submission handler to save all destination columns properly
 import os
 import logging
 import time
@@ -419,3 +420,4 @@ app.FORMS_STORAGE = FORMS_STORAGE
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+```
