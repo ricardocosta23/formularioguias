@@ -40,14 +40,36 @@
         }
 
         .error-message {
-            margin-top: 5px;
-            padding: 5px 0;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+            border-radius: 4px;
+            display: none;
         }
 
         .error-message .text-danger {
             color: #dc3545 !important;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.875rem;
+            margin: 0;
+            display: block;
+        }
+
+        .error-message.show {
+            display: block !important;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -328,10 +350,28 @@
             }
         }
 
+        // Test function to show all error messages (for debugging)
+        function testErrorMessages() {
+            console.log('Testing error messages...');
+            const errorDivs = document.querySelectorAll('.error-message');
+            console.log('Found error divs:', errorDivs.length);
+            errorDivs.forEach((div, index) => {
+                console.log(`Error div ${index}:`, div.id, div);
+                div.style.display = 'block';
+                div.classList.add('show');
+            });
+        }
+
+        // Add test function to window for debugging
+        window.testErrorMessages = testErrorMessages;
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             handleConditionalQuestions();
             feather.replace();
+            
+            // Log for debugging
+            console.log('Page loaded, found error divs:', document.querySelectorAll('.error-message').length);
 
             const form = document.getElementById('surveyForm');
             const submitButton = document.querySelector('.submit-button');
@@ -353,25 +393,34 @@
                 let hasValidationErrors = false;
                 let firstInvalidField = null;
 
+                // Debug logging
+                console.log('Starting form validation...');
+
                 // Get all visible question sections
                 const visibleQuestionSections = Array.from(document.querySelectorAll('.question-section')).filter(section => {
                     return section.style.display !== 'none';
                 });
 
+                console.log('Found visible question sections:', visibleQuestionSections.length);
+
                 // Track processed radio groups to avoid duplicates
                 const processedRadioGroups = new Set();
 
-                visibleQuestionSections.forEach(questionSection => {
+                visibleQuestionSections.forEach((questionSection, index) => {
                     let sectionHasError = false;
                     let questionId = null;
+
+                    console.log(`Checking section ${index}:`, questionSection);
 
                     // Check for yes/no radio buttons
                     const yesNoRadios = questionSection.querySelectorAll('input[type="radio"][required]');
                     if (yesNoRadios.length > 0) {
                         const radioName = yesNoRadios[0].name;
+                        console.log('Found radio group:', radioName);
                         
                         // Skip if we already processed this radio group
                         if (processedRadioGroups.has(radioName)) {
+                            console.log('Already processed radio group:', radioName);
                             return;
                         }
                         processedRadioGroups.add(radioName);
@@ -380,6 +429,7 @@
                         if (!isChecked) {
                             sectionHasError = true;
                             questionId = radioName;
+                            console.log('Radio group not checked:', radioName);
                         }
                     }
 
@@ -391,6 +441,7 @@
                             sectionHasError = true;
                             // Extract question ID from input name (remove _input suffix if present)
                             questionId = ratingInput.name.replace('_input', '');
+                            console.log('Rating input empty:', questionId);
                         }
                     }
 
@@ -402,6 +453,7 @@
                             if (isEmpty) {
                                 sectionHasError = true;
                                 questionId = field.name || field.id;
+                                console.log('Text field empty:', questionId);
                             }
                         }
                     });
@@ -410,10 +462,31 @@
                     if (sectionHasError && questionId) {
                         hasValidationErrors = true;
                         
-                        // Show error message for this question
-                        const errorDiv = document.getElementById('error-' + questionId);
+                        console.log('Showing error for question ID:', questionId);
+                        
+                        // Try to find error div with debug logging
+                        const errorDivId = 'error-' + questionId;
+                        console.log('Looking for error div with ID:', errorDivId);
+                        
+                        const errorDiv = document.getElementById(errorDivId);
+                        console.log('Found error div:', errorDiv);
+                        
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
+                            errorDiv.classList.add('show');
+                            console.log('Error message shown for:', questionId);
+                        } else {
+                            console.error('Error div not found for question ID:', questionId);
+                            // List all available error divs for debugging
+                            const allErrorDivs = document.querySelectorAll('[id^="error-"]');
+                            console.log('Available error divs:', Array.from(allErrorDivs).map(div => div.id));
+                            
+                            // Fallback: create and show error message directly in the section
+                            const fallbackError = document.createElement('div');
+                            fallbackError.className = 'error-message show';
+                            fallbackError.innerHTML = '<small class="text-danger">* Resposta obrigatória!</small>';
+                            questionSection.appendChild(fallbackError);
+                            console.log('Created fallback error message for:', questionId);
                         }
                         
                         // Set first invalid field for scrolling
