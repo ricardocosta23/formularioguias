@@ -345,22 +345,33 @@
 
                     // Check if field is empty and visible
                     if (!field.value.trim() && field.offsetParent !== null) {
-                         hasValidationErrors = true;
-                        // Show error message
-                        const questionId = field.id;
+                        hasValidationErrors = true;
+                        
+                        // Show error message - get the question ID from the name attribute or field ID
+                        let questionId = field.name || field.id;
+                        // For rating fields, the hidden input has name = questionId, but the ID is questionId_input
+                        if (questionId.endsWith('_input')) {
+                            questionId = questionId.replace('_input', '');
+                        }
+                        
                         const errorDiv = document.getElementById('error-' + questionId);
-						if (errorDiv) {
-							errorDiv.style.display = 'block';
-						}
+                        if (errorDiv) {
+                            errorDiv.style.display = 'block';
+                        }
+                        
                         field.focus();
-                        //alert('Por favor, preencha todos os campos obrigatórios visíveis.');
                         return;
                     } else {
-                        const questionId = field.id;
+                        // Hide error message for valid fields
+                        let questionId = field.name || field.id;
+                        if (questionId.endsWith('_input')) {
+                            questionId = questionId.replace('_input', '');
+                        }
+                        
                         const errorDiv = document.getElementById('error-' + questionId);
-						if (errorDiv) {
-							errorDiv.style.display = 'none';
-						}
+                        if (errorDiv) {
+                            errorDiv.style.display = 'none';
+                        }
                     }
                 });
 
@@ -377,9 +388,8 @@
                         }
 
                         // Check if field is empty and visible
-                        if (!field.value.trim() && field.offsetParent !== null) {
+                        if (!field.value.trim() && field.offsetParent !== null && !firstInvalidField) {
                             firstInvalidField = field;
-                            return;
                         }
                     });
 
