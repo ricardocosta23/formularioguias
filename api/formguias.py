@@ -23,8 +23,15 @@ def handle_formguias():
         logging.info(f"Received webhook data for Guias: {webhook_data}")
 
         # Load configuration dynamically
-        with open('setup/config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)
+        try:
+            with open('setup/config.json', 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except json.JSONDecodeError as e:
+            logging.error(f"JSON parsing error in config.json: {str(e)}")
+            return jsonify({"error": "Configuration file has invalid JSON syntax"}), 500
+        except FileNotFoundError:
+            logging.error("config.json file not found")
+            return jsonify({"error": "Configuration file not found"}), 500
 
         guias_config = config.get('guias', {})
 
