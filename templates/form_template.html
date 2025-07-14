@@ -169,12 +169,12 @@
                         <label class="yes-no-label">{{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
                         <div class="yes-no-options">
                             <label class="yes-no-option" for="{{ question.id }}_yes">
-                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="yes" 
+                                <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="Sim" 
                                        {% if question.required %}required{% endif %}>
                                 <span>Sim</span>
                             </label>
                             <label class="yes-no-option" for="{{ question.id }}_no">
-                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="no" 
+                                <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="Não" 
                                        {% if question.required %}required{% endif %}>
                                 <span>Não</span>
                             </label>
@@ -358,9 +358,9 @@
 
             let shouldShow = false;
 
-            // If showIf is empty or not specified, show when parent is "Sim" or "yes"
+            // If showIf is empty or not specified, show when parent is "Sim"
             if (!showIf || showIf === '') {
-                shouldShow = (currentValue === 'Sim' || currentValue === 'yes');
+                shouldShow = (currentValue === 'Sim');
             } else {
                 // Use exact match with showIf value
                 shouldShow = (currentValue === showIf);
