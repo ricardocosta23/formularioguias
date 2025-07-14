@@ -221,6 +221,18 @@ function createQuestionElement(formType, question, index) {
                 </div>
                 ` : ''}
                 
+                ${question.type === 'monday_column' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Coluna de Origem (Monday):</label>
+                        <input type="text" class="form-control" value="${question.source_column || ''}"
+                               placeholder="Ex: text_mkrj9z52, dropdown_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'source_column', this.value)">
+                        <small class="form-text text-muted">ID da coluna do Monday.com que será usada como nome/valor da pergunta</small>
+                    </div>
+                </div>
+                ` : ''}
+                
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Coluna de Destino (Monday):</label>
@@ -336,6 +348,12 @@ function getCurrentQuestions(formType) {
             
             if (dropdownInput && dropdownInput.value) {
                 question.dropdown_options = dropdownInput.value;
+            }
+            
+            // Handle source column for monday_column type questions
+            const sourceColumnInput = element.querySelector('input[placeholder*="text_mkrj9z52"]');
+            if (sourceColumnInput && sourceColumnInput.value) {
+                question.source_column = sourceColumnInput.value;
             }
             
             questions.push(question);
