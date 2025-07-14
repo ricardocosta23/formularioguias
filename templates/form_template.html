@@ -353,83 +353,65 @@
                 let hasValidationErrors = false;
                 let firstInvalidField = null;
 
-                // Get all question sections that are visible (not hidden by conditional logic)
-                const visibleQuestionSections = document.querySelectorAll('.question-section');
-                
+                // Get all visible question sections
+                const visibleQuestionSections = Array.from(document.querySelectorAll('.question-section')).filter(section => {
+                    return section.style.display !== 'none';
+                });
+
+                // Track processed radio groups to avoid duplicates
+                const processedRadioGroups = new Set();
+
                 visibleQuestionSections.forEach(questionSection => {
-                    // Skip if this question section is hidden (conditional logic)
-                    if (questionSection.style.display === 'none') {
-                        return;
+                    let sectionHasError = false;
+                    let questionId = null;
+
+                    // Check for yes/no radio buttons
+                    const yesNoRadios = questionSection.querySelectorAll('input[type="radio"][required]');
+                    if (yesNoRadios.length > 0) {
+                        const radioName = yesNoRadios[0].name;
+                        
+                        // Skip if we already processed this radio group
+                        if (processedRadioGroups.has(radioName)) {
+                            return;
+                        }
+                        processedRadioGroups.add(radioName);
+                        
+                        const isChecked = Array.from(yesNoRadios).some(radio => radio.checked);
+                        if (!isChecked) {
+                            sectionHasError = true;
+                            questionId = radioName;
+                        }
                     }
 
-                    // Find required fields in this section
-                    const requiredFields = questionSection.querySelectorAll('input[required], textarea[required], select[required]');
-                    
-                    requiredFields.forEach(field => {
-                        let isEmpty = false;
-                        let questionId = field.name || field.id;
-
-                        // Check if field is empty based on type
-                        if (field.type === 'radio') {
-                            // For radio buttons, check if any radio with the same name is checked
-                            const radioGroup = questionSection.querySelectorAll(`input[name="${field.name}"]`);
-                            isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
-                            questionId = field.name;
-                        } else if (field.type === 'hidden') {
-                            // For hidden rating inputs, check if they have a value
-                            isEmpty = !field.value || field.value.trim() === '';
-                            // For rating fields, extract question ID from input name
-                            if (field.name.endsWith('_input')) {
-                                questionId = field.name.replace('_input', '');
-                            } else {
-                                questionId = field.name;
-                            }
-                        } else {
-                            // For other field types (text, textarea, select), check if value is empty
-                            isEmpty = !field.value || field.value.trim() === '';
-                        }
-
-                        // If field is empty, show error and mark as invalid
+                    // Check for rating questions (hidden inputs)
+                    const ratingInput = questionSection.querySelector('input[type="hidden"][required]');
+                    if (ratingInput && !sectionHasError) {
+                        const isEmpty = !ratingInput.value || ratingInput.value.trim() === '';
                         if (isEmpty) {
-                            hasValidationErrors = true;
-                            
-                            // Show error message for this question
-                            const errorDiv = document.getElementById('error-' + questionId);
-                            if (errorDiv) {
-                                errorDiv.style.display = 'block';
-                            }
-                            
-                            // Set first invalid field for scrolling
-                            if (!firstInvalidField) {
-                                firstInvalidField = questionSection;
+                            sectionHasError = true;
+                            // Extract question ID from input name (remove _input suffix if present)
+                            questionId = ratingInput.name.replace('_input', '');
+                        }
+                    }
+
+                    // Check for text inputs, textareas, and selects
+                    const textFields = questionSection.querySelectorAll('input[type="text"][required], textarea[required], select[required]');
+                    textFields.forEach(field => {
+                        if (!sectionHasError) {
+                            const isEmpty = !field.value || field.value.trim() === '';
+                            if (isEmpty) {
+                                sectionHasError = true;
+                                questionId = field.name || field.id;
                             }
                         }
                     });
-                });
 
-                // Special handling for radio groups - check each unique radio group only once
-                const radioGroups = new Set();
-                const allRadios = form.querySelectorAll('input[type="radio"][required]');
-                
-                allRadios.forEach(radio => {
-                    const questionSection = radio.closest('.question-section');
-                    
-                    // Skip if this question section is hidden or we already checked this group
-                    if (!questionSection || questionSection.style.display === 'none' || radioGroups.has(radio.name)) {
-                        return;
-                    }
-                    
-                    radioGroups.add(radio.name);
-                    
-                    // Check if any radio in this group is checked
-                    const radioGroup = form.querySelectorAll(`input[name="${radio.name}"]`);
-                    const isChecked = Array.from(radioGroup).some(r => r.checked);
-                    
-                    if (!isChecked) {
+                    // If this section has an error, mark it and show error message
+                    if (sectionHasError && questionId) {
                         hasValidationErrors = true;
                         
-                        // Show error message
-                        const errorDiv = document.getElementById('error-' + radio.name);
+                        // Show error message for this question
+                        const errorDiv = document.getElementById('error-' + questionId);
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
                         }
