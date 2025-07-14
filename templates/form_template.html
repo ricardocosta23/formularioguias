@@ -297,9 +297,17 @@
                             toggleConditionalQuestion(questionElement, input.value, showIf);
                         } else if (input.type !== 'radio' && input.value) {
                             toggleConditionalQuestion(questionElement, input.value, showIf);
-                        } else {
-                            // Ensure conditional questions start hidden
+                        }
+                        
+                        // Ensure conditional questions start hidden regardless
+                        if (!input.checked && (input.type !== 'radio' || input.value === '')) {
                             questionElement.style.display = 'none';
+                            // Also remove required attributes initially for hidden questions
+                            const hiddenInputs = questionElement.querySelectorAll('input[required], textarea[required], select[required]');
+                            hiddenInputs.forEach(hiddenInput => {
+                                hiddenInput.setAttribute('data-originally-required', 'true');
+                                hiddenInput.removeAttribute('required');
+                            });
                         }
                     });
                 }
@@ -307,10 +315,12 @@
         }
 
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
+            // If showIf is empty, default to "yes"
+            const targetValue = showIf || 'yes';
+            
             // Handle both Portuguese and English values
-            const shouldShow = currentValue === showIf || 
-                              (showIf === 'yes' && currentValue === 'yes') ||
-                              (showIf === 'yes' && currentValue === 'Sim');
+            const shouldShow = currentValue === targetValue || 
+                              (targetValue === 'yes' && (currentValue === 'yes' || currentValue === 'Sim'));
 
             if (shouldShow) {
                 questionElement.style.display = 'block';
