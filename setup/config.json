@@ -764,7 +764,16 @@
         "text": "De forma geral você gostaria de contribuir dando alguma elogio ou sugestão em relação à viagem?",
         "type": "longtext",
         "destination_column": "long_text_mksdxwh3"
-      }
+      },
+      {
+        "id": "question_1752177770742",
+        "required": false,
+        "source": "manual",
+        "text": "Teste?",
+        "type": "longtext",
+        "destination_column": "long_text_mksdxwh3"
+      },
+      
     ],
     "questions_title": "✏️Dados Pessoais"
   }
