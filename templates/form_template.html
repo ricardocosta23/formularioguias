@@ -146,16 +146,16 @@
                     <div class="yes-no-question">
                         <label class="yes-no-label">{{ question.text }}</label>
                         <div class="yes-no-options">
-                            <div class="yes-no-option">
+                            <label class="yes-no-option" for="{{ question.id }}_yes">
                                 <input type="radio" id="{{ question.id }}_yes" name="{{ question.id }}" value="yes" 
                                        {% if question.required %}required{% endif %}>
-                                <label for="{{ question.id }}_yes">Sim</label>
-                            </div>
-                            <div class="yes-no-option">
+                                <span>Sim</span>
+                            </label>
+                            <label class="yes-no-option" for="{{ question.id }}_no">
                                 <input type="radio" id="{{ question.id }}_no" name="{{ question.id }}" value="no" 
                                        {% if question.required %}required{% endif %}>
-                                <label for="{{ question.id }}_no">Não</label>
-                            </div>
+                                <span>Não</span>
+                            </label>
                         </div>
                     </div>
 
@@ -350,62 +350,85 @@
                     errorDiv.style.display = 'none';
                 });
 
+                // Track which radio groups we've already checked
+                const checkedRadioGroups = new Set();
+
                 visibleRequiredFields.forEach(field => {
                     const questionSection = field.closest('.question-section');
 
                     // If the field is in a conditional section that's hidden, skip validation
                     if (questionSection && questionSection.style.display === 'none') {
-                        // Remove required attribute temporarily for hidden fields
-                        field.removeAttribute('required');
                         return;
                     }
 
                     // Check if field is empty and visible
                     let isEmpty = false;
+                    let questionId = field.name || field.id;
                     
                     if (field.type === 'radio') {
+                        // Skip if we already checked this radio group
+                        if (checkedRadioGroups.has(field.name)) {
+                            return;
+                        }
+                        checkedRadioGroups.add(field.name);
+                        
                         // For radio buttons, check if any radio with the same name is checked
                         const radioGroup = form.querySelectorAll(`input[name="${field.name}"]`);
                         isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
-                        // Only check the first radio button in the group to avoid duplicates
-                        if (field !== radioGroup[0]) {
-                            return;
-                        }
-                    } else {
-                        // For other field types, check if value is empty
-                        isEmpty = !field.value || !field.value.trim();
-                    }
-                    
-                    if (isEmpty && field.offsetParent !== null) {
-                        hasValidationErrors = true;
-                        
-                        // Get the question ID from the name attribute or field ID
-                        let questionId = field.name || field.id;
+                        questionId = field.name;
+                    } else if (field.type === 'hidden') {
+                        // For hidden rating inputs, check if they have a value
+                        isEmpty = !field.value || field.value.trim() === '';
                         // For rating fields, the hidden input has name = questionId, but the ID is questionId_input
                         if (questionId.endsWith('_input')) {
                             questionId = questionId.replace('_input', '');
                         }
+                    } else {
+                        // For other field types, check if value is empty
+                        isEmpty = !field.value || field.value.trim() === '';
+                    }
+                    
+                    // Only check if field is visible (not in a hidden conditional section)
+                    if (isEmpty && field.offsetParent !== null) {
+                        hasValidationErrors = true;
+                        
+                        console.log('Validation failed for field:', questionId, 'isEmpty:', isEmpty, 'fieldType:', field.type);
                         
                         // Show error message
                         const errorDiv = document.getElementById('error-' + questionId);
                         if (errorDiv) {
                             errorDiv.style.display = 'block';
-                            console.log('Showing error for:', questionId);
+                            console.log('Showing error message for:', questionId);
                         } else {
-                            console.log('Error div not found for:', questionId);
+                            console.log('Error div not found for question ID:', questionId);
+                            // Try to find error div by searching all error divs
+                            const allErrorDivs = document.querySelectorAll('.error-message');
+                            console.log('Available error divs:', Array.from(allErrorDivs).map(div => div.id));
                         }
                         
                         // Set first invalid field for scrolling
                         if (!firstInvalidField) {
-                            firstInvalidField = field;
+                            firstInvalidField = field.type === 'hidden' ? 
+                                field.closest('.question-section') || field : field;
                         }
                     }
                 });
 
                 if (hasValidationErrors) {
                     if (firstInvalidField) {
-                        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // For question sections (rating fields), scroll to the section
+                        const scrollTarget = firstInvalidField.classList?.contains('question-section') ? 
+                            firstInvalidField : firstInvalidField.closest('.question-section') || firstInvalidField;
+                        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Focus on the first input in the section if possible
+                        const firstInput = scrollTarget.querySelector('input, textarea, select');
+                        if (firstInput && firstInput.focus) {
+                            setTimeout(() => firstInput.focus(), 500);
+                        }
                     }
+                    
+                    console.log('Form validation failed. Showing error messages.');
                     return;
                 }
 
