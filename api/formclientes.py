@@ -22,7 +22,7 @@ def handle_formclientes():
         webhook_data = data
         logging.info(f"Received webhook data for Clientes: {webhook_data}")
         
-        # Load configuration
+        # Load configuration dynamically
         with open('setup/config.json', 'r', encoding='utf-8') as f:
             config = json.load(f)
         
@@ -165,93 +165,4 @@ def handle_formclientes():
         
     except Exception as e:
         logging.error(f"Error handling Clientes webhook: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
-import os
-import json
-import logging
-from flask import Blueprint, request, jsonify
-from utils.monday_api import MondayAPI
-from utils.form_generator import FormGenerator
-
-formclientes_bp = Blueprint('formclientes', __name__)
-
-@formclientes_bp.route('/formclientes', methods=['POST'])
-def handle_clientes_webhook():
-    """Handle Monday.com webhook for Clientes forms"""
-    try:
-        webhook_data = request.get_json()
-        logging.info(f"Received Clientes webhook: {webhook_data}")
-        
-        # Load configuration
-        with open('setup/config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        
-        clientes_config = config.get('clientes', {})
-        
-        if not clientes_config.get('board_a') or not clientes_config.get('questions'):
-            return jsonify({"error": "Clientes configuration not complete"}), 400
-        
-        # Extract webhook information
-        event = webhook_data.get('event', {})
-        item_id = event.get('pulseId')
-        item_name = event.get('pulseName', 'Cliente')
-        
-        if not item_id:
-            return jsonify({"error": "Item ID not found in webhook"}), 400
-        
-        # Generate form
-        form_generator = FormGenerator()
-        
-        # Prepare form data
-        form_data = {
-            "type": "clientes",
-            "title": f"Avaliação de Cliente - {item_name}",
-            "subtitle": "Por favor, preencha este formulário para avaliar o cliente",
-            "questions": clientes_config.get('questions', []),
-            "webhook_data": webhook_data,
-            "item_id": item_id,
-            "item_name": item_name
-        }
-        
-        # Get Monday.com data if needed
-        monday_api = MondayAPI()
-        if monday_api.api_token:
-            item_data = monday_api.get_item_column_values(item_id)
-            if item_data and 'data' in item_data:
-                # Add column values to form questions
-                for question in form_data['questions']:
-                    if question.get('type') == 'monday_column':
-                        source_column = question.get('source_column')
-                        if source_column and item_data['data']['items']:
-                            for column_value in item_data['data']['items'][0]['column_values']:
-                                if column_value['id'] == source_column:
-                                    question['column_value'] = column_value['text']
-                                    break
-        
-        form_id = form_generator.generate_form(form_data)
-        
-        # Generate form URL
-        form_url = f"{request.host_url}form/{form_id}"
-        
-        # Update Monday.com with form link if configured
-        if clientes_config.get('board_b') and clientes_config.get('link_column'):
-            try:
-                monday_api.update_item_column(
-                    board_id=clientes_config['board_b'],
-                    item_id=item_id,
-                    column_id=clientes_config['link_column'],
-                    value=form_url
-                )
-                logging.info(f"Updated Monday.com with form link: {form_url}")
-            except Exception as e:
-                logging.error(f"Failed to update Monday.com: {str(e)}")
-        
-        return jsonify({
-            "message": "Clientes form generated successfully",
-            "form_id": form_id,
-            "form_url": form_url
-        })
-        
-    except Exception as e:
-        logging.error(f"Error processing Clientes webhook: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
