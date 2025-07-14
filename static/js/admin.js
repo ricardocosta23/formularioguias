@@ -435,14 +435,8 @@ function saveConfiguration() {
             const jsonString = JSON.stringify(config, null, 2);
             copyConfigToClipboard(jsonString);
 
-            if (data.success) {
-                alert(data.message || 'Configuração salva com sucesso e copiada para área de transferência!');
-                if (data.warning) {
-                    alert('Aviso: ' + data.warning);
-                }
-            } else {
-                alert('Configuração salva com sucesso e copiada para área de transferência!');
-            }
+            // Show only the clipboard success message
+            alert('The body of config.json was successfully copied to the clipboard!');
 
             // Reload configuration to confirm changes were saved
             loadConfiguration();
