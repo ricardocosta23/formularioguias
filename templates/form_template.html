@@ -141,7 +141,7 @@
                 {% set question = item %}
                 {% if question.type == 'monday_column' %}
                     {% if question.column_value and question.column_value != 'Dados não encontrados' and question.column_value != 'Erro ao carregar dados' and question.column_value != 'Dados não disponíveis' and question.column_value != 'Configuração incompleta' and question.column_value.strip() != '' %}
-                    <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="{{ question.conditional.show_if or 'yes' }}" style="display: none;" {% endif %}>
+                    <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="yes" style="display: none;" {% endif %}>
                         <div class="hotel-rating">
                             <label class="rating-label">{{ question.column_value }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
                             <div class="rating-scale-small">
@@ -163,7 +163,7 @@
                     </div>
                     {% endif %}
                 {% else %}
-                <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="{{ question.conditional.show_if or 'yes' }}" style="display: none;" {% endif %}>
+                <div class="question-section" {% if question.conditional %} data-depends-on="{{ question.conditional.depends_on }}" data-show-if="yes" style="display: none;" {% endif %}>
                     {% if question.type == 'yesno' %}
                     <div class="yes-no-question">
                         <label class="yes-no-label">{{ question.text }}{% if question.required %}<span style="color: red;">*</span>{% endif %}</label>
