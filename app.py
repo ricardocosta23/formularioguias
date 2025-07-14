@@ -374,6 +374,11 @@ def submit_form(form_id):
         app.logger.error(f"Error submitting form: {str(e)}")
         return jsonify({"error": "Erro interno do servidor"}), 500
 
+@app.route('/success')
+def success():
+    """Display success page after form submission"""
+    return render_template('success.html')
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('base.html'), 404
