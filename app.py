@@ -124,31 +124,40 @@ def config_api():
         try:
             config_data = request.get_json()
             
-            # Save to config.json file
-            config_path = os.path.join(os.path.dirname(__file__), 'setup', 'config.json')
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config_data, f, indent=2, ensure_ascii=False)
-            
-            # Update the cache
+            # Update the cache first
             global config_cache, config_last_modified
             config_cache = config_data.copy()
             config_last_modified = time.time()
             
-            app.logger.info("Configuration saved successfully to config.json")
-            
+            # Check if we're in Vercel environment first
             if os.environ.get('VERCEL'):
+                app.logger.info("Configuration saved to memory only (Vercel environment)")
                 return jsonify({
                     "success": True,
                     "message": "Configuration saved to memory only. Changes will not persist across deployments.",
                     "warning": "Running in production mode. For persistent changes, update the configuration file and redeploy."
                 })
             else:
-                return jsonify({
-                    "success": True,
-                    "message": "Configuration saved successfully to config.json"
-                })
+                # Only try to write to file in development environment
+                try:
+                    config_path = os.path.join(os.path.dirname(__file__), 'setup', 'config.json')
+                    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+                    
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        json.dump(config_data, f, indent=2, ensure_ascii=False)
+                    
+                    app.logger.info("Configuration saved successfully to config.json")
+                    return jsonify({
+                        "success": True,
+                        "message": "Configuration saved successfully to config.json"
+                    })
+                except Exception as file_error:
+                    app.logger.warning(f"Could not save to file, using memory only: {str(file_error)}")
+                    return jsonify({
+                        "success": True,
+                        "message": "Configuration saved to memory only (file system read-only)",
+                        "warning": "Configuration could not be saved to file. Changes will not persist across restarts."
+                    })
         except Exception as e:
             app.logger.error(f"Error saving configuration: {str(e)}")
             return jsonify({"error": f"Failed to save configuration: {str(e)}"}), 500
