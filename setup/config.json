@@ -409,6 +409,7 @@
         "source": "manual",
         "source_column": "text_mkrj9z52",
         "text_destination_column": "text_mkrjf13y",
+        "rating_destination_column": "numeric_mkrjpfxv",
         "is_conditional": false
       },
       {
@@ -419,6 +420,7 @@
         "source": "manual",
         "source_column": "text_mkrjz0tf",
         "text_destination_column": "text_mkrjk4yg",
+        "rating_destination_column": "numeric_mkrjg1ar",
         "is_conditional": false
       },
       {
@@ -473,7 +475,6 @@
         "source": "manual",
         "source_column": "dropdown_mksdfja5",
         "text_destination_column": "text_mksdf2av",
-        "rating_destination_column": "numeric_mkrj6132",
         "is_conditional": false
       },
       {
@@ -483,8 +484,7 @@
         "required": false,
         "source": "manual",
         "source_column": "dropdown_mksds964",
-        "text_destination_column": "text_mksd268p",
-        "rating_destination_column": "numeric_mksdsjte",
+        "text_destination_column": "numeric_mksdsjte",
         "is_conditional": false
       },
       {
@@ -494,8 +494,7 @@
         "required": true,
         "source": "manual",
         "source_column": "dropdown_mksdhq4q",
-        "text_destination_column": "text_mksdr0qv",
-        "rating_destination_column": "numeric_mksdyxw2",
+        "text_destination_column": "numeric_mksdyxw2",
         "is_conditional": false
       },
       {
@@ -505,8 +504,7 @@
         "required": true,
         "source": "manual",
         "source_column": "dropdown_mksdspz0",
-        "text_destination_column": "text_mksdppd8",
-        "rating_destination_column": "numeric_mksdy42p",
+        "text_destination_column": "numeric_mksdy42p",
         "is_conditional": false
       },
       {
