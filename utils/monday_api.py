@@ -342,3 +342,13 @@ class MondayAPI:
         except Exception as e:
             logging.error(f"Error creating item with values: {str(e)}")
             return None
+
+    def _make_request(self, mutation):
+        """Helper function to make the API request"""
+        headers = {
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json"
+        }
+        data = {'query': mutation}
+        response = requests.post(self.api_url, headers=headers, json=data)
+        return response.json()
