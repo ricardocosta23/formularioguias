@@ -297,6 +297,9 @@
                             toggleConditionalQuestion(questionElement, input.value, showIf);
                         } else if (input.type !== 'radio' && input.value) {
                             toggleConditionalQuestion(questionElement, input.value, showIf);
+                        } else {
+                            // Ensure conditional questions start hidden
+                            questionElement.style.display = 'none';
                         }
                     });
                 }
@@ -304,7 +307,10 @@
         }
 
         function toggleConditionalQuestion(questionElement, currentValue, showIf) {
-            const shouldShow = currentValue === showIf;
+            // Handle both Portuguese and English values
+            const shouldShow = currentValue === showIf || 
+                              (showIf === 'yes' && currentValue === 'yes') ||
+                              (showIf === 'yes' && currentValue === 'Sim');
 
             if (shouldShow) {
                 questionElement.style.display = 'block';
