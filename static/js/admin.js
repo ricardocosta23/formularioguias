@@ -1,4 +1,3 @@
-
 // Admin Interface JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdminInterface();
@@ -53,7 +52,7 @@ function initializeEventListeners() {
         saveConfigBtn.addEventListener('click', saveConfiguration);
     }
 
-    
+
 
     // Add question button
     const addQuestionBtn = document.getElementById('addQuestionBtn');
@@ -183,7 +182,7 @@ function createQuestionElement(formType, question, index) {
                         <i data-feather="trash-2"></i> Remover
                     </button>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-md-6">
                         <label class="form-label">Tipo:</label>
@@ -201,7 +200,7 @@ function createQuestionElement(formType, question, index) {
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="row mt-3">
                     <div class="col-12">
                         <label class="form-label">Texto da Pergunta:</label>
@@ -209,7 +208,7 @@ function createQuestionElement(formType, question, index) {
                                   onchange="updateQuestionField('${formType}', ${index}, 'text', this.value)">${question.text || ''}</textarea>
                     </div>
                 </div>
-                
+
                 ${question.type === 'dropdown' ? `
                 <div class="row mt-3">
                     <div class="col-12">
@@ -220,7 +219,7 @@ function createQuestionElement(formType, question, index) {
                     </div>
                 </div>
                 ` : ''}
-                
+
                 ${question.type === 'monday_column' ? `
                 <div class="row mt-3">
                     <div class="col-12">
@@ -232,7 +231,7 @@ function createQuestionElement(formType, question, index) {
                     </div>
                 </div>
                 ` : ''}
-                
+
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Coluna de Destino (Monday):</label>
@@ -245,7 +244,7 @@ function createQuestionElement(formType, question, index) {
                         <input type="text" class="form-control" value="${question.id || ''}" readonly>
                     </div>
                 </div>
-                
+
                 ${question.conditional ? `
                 <div class="row mt-3">
                     <div class="col-12">
@@ -277,13 +276,13 @@ function addQuestion(formType) {
     // Get current questions
     const questionsContainer = document.getElementById(`${formType}-questions`);
     const currentQuestions = getCurrentQuestions(formType);
-    
+
     // Add new question
     currentQuestions.push(newQuestion);
-    
+
     // Re-render questions
     renderQuestions(formType, currentQuestions);
-    
+
     // Scroll to new question
     setTimeout(() => {
         const newQuestionElement = questionsContainer.lastElementChild;
@@ -305,7 +304,7 @@ function updateQuestionField(formType, index, field, value) {
     const currentQuestions = getCurrentQuestions(formType);
     if (currentQuestions[index]) {
         currentQuestions[index][field] = value;
-        
+
         // If the type field is being changed, re-render the questions to show/hide conditional fields
         if (field === 'type') {
             renderQuestions(formType, currentQuestions);
@@ -319,10 +318,10 @@ function getCurrentQuestions(formType) {
 
     const questions = [];
     const questionElements = questionsContainer.querySelectorAll('.question-item');
-    
+
     questionElements.forEach((element, index) => {
         const questionId = element.getAttribute('data-question-id');
-        
+
         if (element.querySelector('.divider-question')) {
             // Divider question
             const titleInput = element.querySelector('input[type="text"]');
@@ -338,7 +337,7 @@ function getCurrentQuestions(formType) {
             const textTextarea = element.querySelector('textarea');
             const dropdownInput = element.querySelector('input[placeholder*="Opção"]');
             const destinationInput = element.querySelector('input[placeholder*="text_mksd"]');
-            
+
             const question = {
                 id: questionId,
                 type: typeSelect ? typeSelect.value : 'text',
@@ -346,25 +345,25 @@ function getCurrentQuestions(formType) {
                 required: requiredSelect ? requiredSelect.value === 'true' : false,
                 source: 'manual'
             };
-            
+
             if (destinationInput && destinationInput.value) {
                 question.destination_column = destinationInput.value;
             }
-            
+
             if (dropdownInput && dropdownInput.value) {
                 question.dropdown_options = dropdownInput.value;
             }
-            
+
             // Handle source column for monday_column type questions
             const sourceColumnInput = element.querySelector('input[placeholder*="text_mkrj9z52"]');
             if (sourceColumnInput && sourceColumnInput.value) {
                 question.source_column = sourceColumnInput.value;
             }
-            
+
             questions.push(question);
         }
     });
-    
+
     return questions;
 }
 
@@ -393,7 +392,7 @@ function saveConfiguration() {
             // Copy configuration to clipboard
             const jsonString = JSON.stringify(config, null, 2);
             copyConfigToClipboard(jsonString);
-            
+
             if (data.success) {
                 alert(data.message || 'Configuração salva com sucesso e copiada para área de transferência!');
                 if (data.warning) {
@@ -402,7 +401,7 @@ function saveConfiguration() {
             } else {
                 alert('Configuração salva com sucesso e copiada para área de transferência!');
             }
-            
+
             // Reload configuration to confirm changes were saved
             loadConfiguration();
         }
@@ -564,7 +563,7 @@ function fallbackCopyToClipboard(text) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
         document.execCommand('copy');
         console.log('config.json copiado para área de transferência!');
@@ -587,17 +586,17 @@ function fallbackCopyToClipboard(text) {
             z-index: 9999;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         `;
-        
+
         modal.innerHTML = `
             <h3>Copie o JSON abaixo:</h3>
             <textarea readonly style="width: 100%; height: 400px; font-family: monospace; font-size: 12px;">${text}</textarea>
             <br><br>
             <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Fechar</button>
         `;
-        
+
         document.body.appendChild(modal);
     }
-    
+
     document.body.removeChild(textArea);
 }
 
@@ -637,4 +636,168 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeAdminInterface);
 } else {
     initializeAdminInterface();
+}
+
+function getAllYesNoQuestions(formType) {
+    // Get current questions
+    const questionsContainer = document.getElementById(`${formType}-questions`);
+    const currentQuestions = getCurrentQuestions(formType);
+    const yesNoQuestions = currentQuestions.filter(q => q.type === 'yesno');
+    return yesNoQuestions;
+}
+
+//Add conditional questions
+function createQuestionElement(formType, question, index) {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-item mb-4 p-3 border rounded';
+    questionDiv.setAttribute('data-question-id', question.id);
+
+    let questionHtml = '';
+
+    if (question.type === 'divider') {
+        questionHtml = `
+            <div class="divider-question">
+                <h5 class="text-primary">
+                    <i data-feather="minus"></i>
+                    ${question.title || 'Divisor'}
+                </h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Título do Divisor:</label>
+                        <input type="text" class="form-control" value="${question.title || ''}" 
+                               onchange="updateQuestionField('${formType}', ${index}, 'title', this.value)">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                            <i data-feather="trash-2"></i> Remover
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        const typeOptions = {
+            'text': 'Texto',
+            'longtext': 'Texto Longo',
+            'yesno': 'Sim/Não',
+            'rating': 'Avaliação (1-10)',
+            'dropdown': 'Lista Suspensa',
+            'monday_column': 'Coluna Monday'
+        };
+
+        questionHtml = `
+            <div class="regular-question">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Pergunta ${index + 1}</h6>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion('${formType}', ${index})">
+                        <i data-feather="trash-2"></i> Remover
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'type', this.value)">
+                            ${Object.entries(typeOptions).map(([value, text]) => 
+                                `<option value="${value}" ${question.type === value ? 'selected' : ''}>${text}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Obrigatória:</label>
+                        <select class="form-control" onchange="updateQuestionField('${formType}', ${index}, 'required', this.value === 'true')">
+                            <option value="false" ${!question.required ? 'selected' : ''}>Não</option>
+                            <option value="true" ${question.required ? 'selected' : ''}>Sim</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Texto da Pergunta:</label>
+                        <textarea class="form-control" rows="2" 
+                                  onchange="updateQuestionField('${formType}', ${index}, 'text', this.value)">${question.text || ''}</textarea>
+                    </div>
+                </div>
+
+                ${question.type === 'dropdown' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Opções (separadas por ponto e vírgula):</label>
+                        <input type="text" class="form-control" value="${question.dropdown_options || ''}"
+                               placeholder="Opção 1;Opção 2;Opção 3"
+                               onchange="updateQuestionField('${formType}', ${index}, 'dropdown_options', this.value)">
+                    </div>
+                </div>
+                ` : ''}
+
+                ${question.type === 'monday_column' ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <label class="form-label">Coluna de Origem (Monday):</label>
+                        <input type="text" class="form-control" value="${question.source_column || ''}"
+                               placeholder="Ex: text_mkrj9z52, dropdown_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'source_column', this.value)">
+                        <small class="form-text text-muted">ID da coluna do Monday.com que será usada como nome/valor da pergunta</small>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Coluna de Destino (Monday):</label>
+                        <input type="text" class="form-control" value="${question.destination_column || ''}"
+                               placeholder="Ex: text_mksd123"
+                               onchange="updateQuestionField('${formType}', ${index}, 'destination_column', this.value)">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">ID da Pergunta:</label>
+                        <input type="text" class="form-control" value="${question.id || ''}" readonly>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Depende da pergunta (Sim/Não):</label>
+                        <select class="form-control" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
+                            <option value="">Nenhuma</option>
+                            ${getAllYesNoQuestions(formType).map(q => 
+                                `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mostrar se a resposta for:</label>
+                        <select class="form-control" onchange="updateQuestionConditional('${formType}', ${index}, 'show_if', this.value)">
+                            <option value="Sim" ${question.conditional && question.conditional.show_if === 'Sim' ? 'selected' : ''}>Sim</option>
+                            <option value="Não" ${question.conditional && question.conditional.show_if === 'Não' ? 'selected' : ''}>Não</option>
+                        </select>
+                    </div>
+                </div>
+
+                ${question.conditional ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <strong>Pergunta Condicional:</strong> Depende de "${question.conditional.depends_on}"
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    questionDiv.innerHTML = questionHtml;
+    return questionDiv;
+}
+
+function updateQuestionConditional(formType, index, field, value) {
+    const currentQuestions = getCurrentQuestions(formType);
+    if (currentQuestions[index]) {
+        if (!currentQuestions[index].conditional) {
+            currentQuestions[index].conditional = {};
+        }
+        currentQuestions[index].conditional[field] = value;
+    }
 }
