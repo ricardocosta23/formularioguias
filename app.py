@@ -9,7 +9,6 @@ import tempfile
 import uuid
 from datetime import datetime
 import threading
-
 # Import API modules
 from api.formguias import formguias_bp
 from api.formclientes import formclientes_bp  
