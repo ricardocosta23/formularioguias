@@ -274,7 +274,7 @@ function createQuestionElement(formType, question, index) {
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Depende da pergunta (Sim/Não):</label>
-                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}', 'depends_on', this.value)">
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
                             <option value="">Nenhuma</option>
                             ${getAllYesNoQuestions(formType).map(q => 
                                 `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
@@ -308,108 +308,14 @@ function createQuestionElement(formType, question, index) {
     return questionDiv;
 }
 
-function addQuestion(formType) {
-    const questionId = 'question_' + Date.now();
-    const newQuestion = {
-        id: questionId,
-        type: 'text',
-        text: '',
-        required: false,
-        source: 'manual',
-        destination_column: ''
-    };
-
-    // Get current questions
-    const questionsContainer = document.getElementById(`${formType}-questions`);
-    const currentQuestions = getCurrentQuestions(formType);
-
-    // Add new question
-    currentQuestions.push(newQuestion);
-
-    // Re-render questions
-    renderQuestions(formType, currentQuestions);
-
-    // Scroll to new question
-    setTimeout(() => {
-        const newQuestionElement = questionsContainer.lastElementChild;
-        if (newQuestionElement) {
-            newQuestionElement.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, 100);
-}
-
-function removeQuestion(formType, index) {
-    if (confirm('Tem certeza que deseja remover esta pergunta?')) {
-        const currentQuestions = getCurrentQuestions(formType);
-        currentQuestions.splice(index, 1);
-        renderQuestions(formType, currentQuestions);
-    }
-}
-
-function updateQuestionField(formType, index, field, value) {
+function updateQuestionConditional(formType, index, field, value) {
     const currentQuestions = getCurrentQuestions(formType);
     if (currentQuestions[index]) {
-        currentQuestions[index][field] = value;
-
-        // If the type field is being changed, re-render the questions to show/hide conditional fields
-        if (field === 'type') {
-            renderQuestions(formType, currentQuestions);
+        if (!currentQuestions[index].conditional) {
+            currentQuestions[index].conditional = {};
         }
+        currentQuestions[index].conditional[field] = value;
     }
-}
-
-function getCurrentQuestions(formType) {
-    const questionsContainer = document.getElementById(`${formType}-questions`);
-    if (!questionsContainer) return [];
-
-    const questions = [];
-    const questionElements = questionsContainer.querySelectorAll('.question-item');
-
-    questions.forEach((element, index) => {
-            const questionData = {
-                id: element.querySelector('input[name="question_id"]')?.value || `question_${index}`,
-                text: element.querySelector('input[name="question_text"]')?.value || '',
-                type: element.querySelector('select[name="question_type"]')?.value || 'yesno',
-                required: element.querySelector('input[name="required"]')?.checked || false,
-                destination_column: element.querySelector('input[name="destination_column"]')?.value || ''
-            };
-
-            // Handle specific fields for different question types
-            if (questionData.type === 'dropdown') {
-                const optionsTextarea = element.querySelector('textarea[name="dropdown_options"]');
-                if (optionsTextarea) {
-                    questionData.options = optionsTextarea.value.split('\n').filter(option => option.trim());
-                }
-            }
-
-            if (questionData.type === 'monday_column') {
-                const boardSelect = element.querySelector('select[name="board_select"]');
-                const columnSelect = element.querySelector('select[name="column_select"]');
-
-                if (boardSelect) {
-                    questionData.board_id = boardSelect.value;
-                }
-                if (columnSelect) {
-                    questionData.column_id = columnSelect.value;
-                }
-
-                // Handle text destination column for monday_column type questions
-                const textDestinationInput = element.querySelector('input[placeholder*="text_mkhotel_name"]');
-                if (textDestinationInput) {
-                    questionData.text_destination_column = textDestinationInput.value;
-                }
-
-                // Handle rating destination column for monday_column type questions
-                const ratingDestinationInput = element.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
-                if (ratingDestinationInput) {
-                    questionData.rating_destination_column = ratingDestinationInput.value;
-                }
-            }
-
-            questions.push(questionData);
-        });
-
-    return questions;
 }
 
 function saveConfiguration() {
@@ -823,8 +729,8 @@ function createQuestionElement(formType, question, index) {
 
                 <div class="row mt-3">
                     <div class="col-md-6">
-                        <label class="form-label">Depende da pergunta (Sim/Não):label>
-                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}', 'depends_on', this.value)">
+                        <label class="form-label">Depende da pergunta (Sim/Não):</label>
+                        <select class="form-control conditional-depends-on" onchange="updateQuestionConditional('${formType}', ${index}, 'depends_on', this.value)">
                             <option value="">Nenhuma</option>
                             ${getAllYesNoQuestions(formType).map(q => 
                                 `<option value="${q.id}" ${question.conditional && question.conditional.depends_on === q.id ? 'selected' : ''}>${q.text || q.id}</option>`
