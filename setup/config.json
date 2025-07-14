@@ -407,7 +407,7 @@
         "text": "",
         "required": false,
         "source": "manual",
-        "destination_column": "numeric_mkrjpfxv",
+        "destination_column": "text_mkrjf13y",
         "source_column": "text_mkrj9z52",
         "is_conditional": false
       },
@@ -417,7 +417,7 @@
         "text": "",
         "required": false,
         "source": "manual",
-        "destination_column": "numeric_mkrjg1ar",
+        "destination_column": "text_mkrjk4yg",
         "source_column": "text_mkrjz0tf",
         "is_conditional": false
       },
@@ -471,7 +471,7 @@
         "text": "",
         "required": false,
         "source": "manual",
-        "destination_column": "numeric_mkrj6132",
+        "destination_column": "text_mksdf2av",
         "source_column": "dropdown_mksdfja5",
         "is_conditional": false
       },
