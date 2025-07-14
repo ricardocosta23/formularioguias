@@ -156,12 +156,10 @@
                                        {% if question.required %}required{% endif %}>
                             </div>
                         </div>
-                        <!-- Error message for all monday_column questions with required attribute -->
-                        {% if question.required %}
+                        <!-- Error message for monday_column questions -->
                         <div class="error-message d-none" id="error-{{ question.id }}">
                             <small class="text-danger">* Resposta obrigatória!</small>
                         </div>
-                        {% endif %}
                     </div>
                     {% endif %}
                 {% else %}
@@ -237,12 +235,10 @@
 
                     {% endif %}
 
-                    <!-- Error message for ALL question types when required -->
-                    {% if question.required %}
+                    <!-- Error message for ALL question types -->
                     <div class="error-message d-none" id="error-{{ question.id }}">
                         <small class="text-danger">* Resposta obrigatória!</small>
                     </div>
-                    {% endif %}
                 </div>
                 {% endif %}
                 {% endif %}
