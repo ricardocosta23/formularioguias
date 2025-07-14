@@ -268,6 +268,13 @@
                 questionElement.style.display = 'block';
                 questionElement.style.opacity = '0';
                 questionElement.style.transform = 'translateY(-10px)';
+                
+                // Restore required attributes for visible questions
+                const conditionalInputs = questionElement.querySelectorAll('input[data-originally-required], textarea[data-originally-required], select[data-originally-required]');
+                conditionalInputs.forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
+                
                 setTimeout(() => {
                     questionElement.style.transition = 'all 0.3s ease';
                     questionElement.style.opacity = '1';
@@ -279,13 +286,19 @@
                 questionElement.style.transform = '';
                 questionElement.style.transition = '';
 
-                // Clear values from hidden questions
+                // Clear values from hidden questions and remove required attributes
                 const hiddenInputs = questionElement.querySelectorAll('input, textarea, select');
                 hiddenInputs.forEach(hiddenInput => {
                     if (hiddenInput.type === 'radio' || hiddenInput.type === 'checkbox') {
                         hiddenInput.checked = false;
                     } else if (hiddenInput.type !== 'hidden') {
                         hiddenInput.value = '';
+                    }
+                    
+                    // Store original required state and remove required attribute
+                    if (hiddenInput.hasAttribute('required')) {
+                        hiddenInput.setAttribute('data-originally-required', 'true');
+                        hiddenInput.removeAttribute('required');
                     }
                 });
             }
@@ -305,6 +318,33 @@
 
                 // Prevent multiple submissions
                 if (isSubmitting) {
+                    return;
+                }
+
+                // Validate only visible required fields
+                const visibleRequiredFields = form.querySelectorAll('input[required], textarea[required], select[required]');
+                let hasValidationErrors = false;
+
+                visibleRequiredFields.forEach(field => {
+                    const questionSection = field.closest('.question-section');
+                    
+                    // If the field is in a conditional section that's hidden, skip validation
+                    if (questionSection && questionSection.style.display === 'none') {
+                        // Remove required attribute temporarily for hidden fields
+                        field.removeAttribute('required');
+                        return;
+                    }
+
+                    // Check if field is empty and visible
+                    if (!field.value.trim() && field.offsetParent !== null) {
+                        hasValidationErrors = true;
+                        field.focus();
+                        alert('Por favor, preencha todos os campos obrigatórios visíveis.');
+                        return;
+                    }
+                });
+
+                if (hasValidationErrors) {
                     return;
                 }
 
