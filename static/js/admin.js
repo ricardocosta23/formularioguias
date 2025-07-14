@@ -376,6 +376,18 @@ function getCurrentQuestions(formType) {
                 question.source_column = sourceColumnInput.value;
             }
 
+            // Handle text destination column for monday_column type questions
+            const textDestinationInput = element.querySelector('input[placeholder*="text_mkhotel_name"]');
+            if (textDestinationInput && textDestinationInput.value) {
+                question.text_destination_column = textDestinationInput.value;
+            }
+
+            // Handle rating destination column for monday_column type questions
+            const ratingDestinationInput = element.querySelector('input[placeholder*="numeric_mkrjpfxv"]');
+            if (ratingDestinationInput && ratingDestinationInput.value) {
+                question.rating_destination_column = ratingDestinationInput.value;
+            }
+
             // Handle conditional question data
             const dependsOnSelect = element.querySelector('.conditional-depends-on');
             const showIfSelect = element.querySelector('.conditional-show-if');
