@@ -203,23 +203,43 @@ class FormGenerator:
                 destination_column = question.get('destination_column')
                 question_type = question.get('type', '')
 
-                if not destination_column or not question_id:
+                # Skip questions without ID
+                if not question_id:
                     continue
 
                 # Handle Monday column questions (Coluna do Monday)
                 if question_type == 'monday_column':
-                    # For Monday column questions, use the column_value (already fetched from source)
+                    # Handle text destination column (for the fetched text value)
+                    text_destination = question.get('text_destination_column') or question.get('destination_column')
                     column_value = question.get('column_value', '')
-                    if column_value:
-                        column_values[destination_column] = str(column_value)
-                        logging.info(f"Monday column question {question_id}: saving '{column_value}' to destination column '{destination_column}'")
-                    else:
-                        logging.warning(f"Monday column question {question_id} has no column_value to save")
+                    
+                    if column_value and text_destination:
+                        column_values[text_destination] = str(column_value)
+                        logging.info(f"Monday column question {question_id}: saving text '{column_value}' to text destination '{text_destination}'")
+                    
+                    # Handle rating destination column (for user's numeric rating)
+                    rating_destination = question.get('rating_destination_column')
+                    submitted_rating = submission_data.get(question_id, "")
+                    
+                    if submitted_rating and rating_destination:
+                        try:
+                            rating_value = int(submitted_rating)
+                            if 1 <= rating_value <= 10:
+                                column_values[rating_destination] = rating_value
+                                logging.info(f"Monday column question {question_id}: saving rating {rating_value} to rating destination '{rating_destination}'")
+                            else:
+                                logging.warning(f"Rating value {rating_value} outside valid range (1-10) for question {question_id}")
+                        except ValueError:
+                            logging.warning(f"Invalid rating value '{submitted_rating}' for question {question_id}")
+                    
+                    # Log if missing destination columns
+                    if not text_destination and not rating_destination:
+                        logging.warning(f"Monday column question {question_id} has no destination columns configured")
                 else:
                     # For other question types, use submitted value
                     submitted_value = submission_data.get(question_id, "")
 
-                    if submitted_value:
+                    if submitted_value and destination_column:
                         # Format value based on question type
                         if question_type == 'rating':
                             # Handle rating questions (1-5 scale)
@@ -234,6 +254,8 @@ class FormGenerator:
                         else:
                             # Handle text, longtext, dropdown questions
                             column_values[destination_column] = str(submitted_value)
+                    elif submitted_value and not destination_column:
+                        logging.warning(f"Question {question_id} ({question_type}) has submitted value but no destination_column")
 
             # Create item name from header data
             header_data = form_data.get('header_data', {})
