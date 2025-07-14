@@ -53,11 +53,7 @@ function initializeEventListeners() {
         saveConfigBtn.addEventListener('click', saveConfiguration);
     }
 
-    // Generate config.json button
-    const generateConfigJsonBtn = document.getElementById('generateConfigJson');
-    if (generateConfigJsonBtn) {
-        generateConfigJsonBtn.addEventListener('click', generateConfigJson);
-    }
+    
 
     // Add question button
     const addQuestionBtn = document.getElementById('addQuestionBtn');
@@ -370,15 +366,20 @@ function saveConfiguration() {
         console.log('Save response:', data);
         if (data.error) {
             alert('Erro ao salvar configuração: ' + data.error);
-        } else if (data.success) {
-            alert(data.message || 'Configuração salva com sucesso!');
-            if (data.warning) {
-                alert('Aviso: ' + data.warning);
-            }
-            // Reload configuration to confirm changes were saved
-            loadConfiguration();
         } else {
-            alert('Configuração salva com sucesso!');
+            // Copy configuration to clipboard
+            const jsonString = JSON.stringify(config, null, 2);
+            copyConfigToClipboard(jsonString);
+            
+            if (data.success) {
+                alert(data.message || 'Configuração salva com sucesso e copiada para área de transferência!');
+                if (data.warning) {
+                    alert('Aviso: ' + data.warning);
+                }
+            } else {
+                alert('Configuração salva com sucesso e copiada para área de transferência!');
+            }
+            
             // Reload configuration to confirm changes were saved
             loadConfiguration();
         }
@@ -516,19 +517,11 @@ function deleteForm(formId) {
     }
 }
 
-function generateConfigJson() {
-    const config = {
-        guias: extractFormConfig('guias'),
-        clientes: extractFormConfig('clientes'),
-        fornecedores: extractFormConfig('fornecedores')
-    };
-
-    const jsonString = JSON.stringify(config, null, 2);
-
+function copyConfigToClipboard(jsonString) {
     // Try to copy to clipboard
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(jsonString).then(() => {
-            alert('config.json copiado para área de transferência!');
+            console.log('config.json copiado para área de transferência!');
         }).catch(err => {
             console.error('Erro ao copiar para área de transferência:', err);
             fallbackCopyToClipboard(jsonString);
@@ -551,7 +544,7 @@ function fallbackCopyToClipboard(text) {
     
     try {
         document.execCommand('copy');
-        alert('config.json copiado para área de transferência!');
+        console.log('config.json copiado para área de transferência!');
     } catch (err) {
         console.error('Erro ao copiar:', err);
         // Show the JSON in a modal/alert as last resort
