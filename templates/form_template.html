@@ -13,28 +13,28 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     <style>
         .submit-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-        
+
         .submit-button.loading {
             background-color: #6c757d;
             border-color: #6c757d;
         }
-        
+
         .submit-button.loading:hover {
             background-color: #6c757d;
             border-color: #6c757d;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         .submit-button.loading i {
             animation: spin 1s linear infinite;
         }
@@ -123,6 +123,10 @@
                                        {% if question.required %}required{% endif %}>
                             </div>
                         </div>
+                         <!-- Error message for mandatory questions -->
+                        <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                            <small class="text-danger">Resposta obrigatória!</small>
+                        </div>
                     </div>
                     {% endif %}
                 {% else %}
@@ -197,6 +201,10 @@
                     </select>
 
                     {% endif %}
+                     <!-- Error message for mandatory questions -->
+                        <div class="error-message" id="error-{{ question.id }}" style="display: none;">
+                            <small class="text-danger">Resposta obrigatória!</small>
+                        </div>
                 </div>
                 {% endif %}
                 {% endif %}
@@ -268,13 +276,13 @@
                 questionElement.style.display = 'block';
                 questionElement.style.opacity = '0';
                 questionElement.style.transform = 'translateY(-10px)';
-                
+
                 // Restore required attributes for visible questions
                 const conditionalInputs = questionElement.querySelectorAll('input[data-originally-required], textarea[data-originally-required], select[data-originally-required]');
                 conditionalInputs.forEach(input => {
                     input.setAttribute('required', 'required');
                 });
-                
+
                 setTimeout(() => {
                     questionElement.style.transition = 'all 0.3s ease';
                     questionElement.style.opacity = '1';
@@ -294,7 +302,7 @@
                     } else if (hiddenInput.type !== 'hidden') {
                         hiddenInput.value = '';
                     }
-                    
+
                     // Store original required state and remove required attribute
                     if (hiddenInput.hasAttribute('required')) {
                         hiddenInput.setAttribute('data-originally-required', 'true');
@@ -327,7 +335,7 @@
 
                 visibleRequiredFields.forEach(field => {
                     const questionSection = field.closest('.question-section');
-                    
+
                     // If the field is in a conditional section that's hidden, skip validation
                     if (questionSection && questionSection.style.display === 'none') {
                         // Remove required attribute temporarily for hidden fields
@@ -337,14 +345,47 @@
 
                     // Check if field is empty and visible
                     if (!field.value.trim() && field.offsetParent !== null) {
-                        hasValidationErrors = true;
+                         hasValidationErrors = true;
+                        // Show error message
+                        const questionId = field.id;
+                        const errorDiv = document.getElementById('error-' + questionId);
+						if (errorDiv) {
+							errorDiv.style.display = 'block';
+						}
                         field.focus();
-                        alert('Por favor, preencha todos os campos obrigatórios visíveis.');
+                        //alert('Por favor, preencha todos os campos obrigatórios visíveis.');
                         return;
+                    } else {
+                        const questionId = field.id;
+                        const errorDiv = document.getElementById('error-' + questionId);
+						if (errorDiv) {
+							errorDiv.style.display = 'none';
+						}
                     }
                 });
 
                 if (hasValidationErrors) {
+                     let firstInvalidField = null;
+                     visibleRequiredFields.forEach(field => {
+                        const questionSection = field.closest('.question-section');
+
+                        // If the field is in a conditional section that's hidden, skip validation
+                        if (questionSection && questionSection.style.display === 'none') {
+                            // Remove required attribute temporarily for hidden fields
+                            field.removeAttribute('required');
+                            return;
+                        }
+
+                        // Check if field is empty and visible
+                        if (!field.value.trim() && field.offsetParent !== null) {
+                            firstInvalidField = field;
+                            return;
+                        }
+                    });
+
+                    if (firstInvalidField) {
+                        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                     return;
                 }
 
@@ -380,7 +421,7 @@
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Ocorreu um erro ao enviar o formulário. Tente novamente.');
-                    
+
                     // Re-enable submit button on error
                     isSubmitting = false;
                     submitButton.disabled = false;
