@@ -17,9 +17,13 @@ class AdminInterface {
         // Tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', (e) => {
-                // Get the tab name from the button itself, not the clicked element
+                // Prevent event propagation and get tab name from button
+                e.preventDefault();
+                e.stopPropagation();
                 const tabName = button.dataset.tab;
-                this.showTab(tabName);
+                if (tabName) {
+                    this.showTab(tabName);
+                }
             });
         });
 
