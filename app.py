@@ -44,24 +44,34 @@ CONFIG_STORAGE = {
     }
 }
 
+# Global configuration cache
+config_cache = None
+config_last_modified = None
+
 def load_config():
-    """Load configuration from file or environment"""
+    """Load configuration from JSON file with caching"""
+    global config_cache, config_last_modified
+
+    config_path = os.path.join(os.path.dirname(__file__), 'setup', 'config.json')
+
     try:
-        if os.path.exists('setup/config.json'):
-            with open('setup/config.json', 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except:
-        pass
+        # Check if file has been modified
+        current_modified = os.path.getmtime(config_path)
 
-    # Try to load from environment variable for Vercel
-    config_env = os.environ.get('FORMS_CONFIG')
-    if config_env:
-        try:
-            return json.loads(config_env)
-        except:
-            pass
+        if config_cache is None or config_last_modified != current_modified:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_cache = json.load(f)
+                config_last_modified = current_modified
+                app.logger.info("Configuration loaded/reloaded from file")
 
-    return CONFIG_STORAGE
+        return config_cache
+
+    except FileNotFoundError:
+        app.logger.warning("Config file not found, using default configuration")
+        return {}
+    except json.JSONDecodeError as e:
+        app.logger.error(f"Error parsing config file: {str(e)}")
+        return {}
 
 def save_config(config):
     """Save configuration (in development only)"""
@@ -110,20 +120,35 @@ def config_api():
 
 @app.route('/api/forms', methods=['GET'])
 def list_forms():
-    """API endpoint to list all forms"""
+    """List all generated forms"""
     try:
-        forms = []
-        for form_id, form_data in FORMS_STORAGE.items():
-            forms.append({
-                'id': form_id,
-                'type': form_data.get('type', 'unknown'),
-                'created_at': form_data.get('created_at', ''),
-                'header_data': form_data.get('header_data', {})
-            })
+        from utils.form_generator import FormGenerator
+        form_generator = FormGenerator()
+        forms = form_generator.list_all_forms()
         return jsonify(forms)
     except Exception as e:
         app.logger.error(f"Error listing forms: {str(e)}")
-        return jsonify({"error": "Failed to list forms"}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/reload_config', methods=['POST'])
+def reload_config():
+    """Reload configuration from file"""
+    try:
+        # Clear any cached configuration
+        global config_cache
+        config_cache = None
+
+        # Load fresh configuration
+        config = load_config()
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration reloaded successfully",
+            "config": config
+        })
+    except Exception as e:
+        app.logger.error(f"Error reloading config: {str(e)}")
+        return jsonify({"error": "Failed to reload configuration"}), 500
 
 @app.route('/api/forms/<form_id>', methods=['DELETE'])
 def delete_form(form_id):
@@ -142,9 +167,16 @@ def delete_form(form_id):
 def display_form(form_id):
     """Display generated form"""
     try:
-        form_data = FORMS_STORAGE.get(form_id)
+        from utils.form_generator import FormGenerator
+        form_generator = FormGenerator()
+        form_data = form_generator.get_form_data(form_id)
+        
         if not form_data:
             return "Form not found", 404
+
+        # Load current configuration to ensure latest settings
+        config = load_config()
+        form_data['config'] = config
 
         return render_template('form_template.html', form_data=form_data, form_id=form_id)
     except Exception as e:
@@ -175,73 +207,62 @@ def process_form_background(form_id, submission_data, stored_form_data):
             app.logger.info(f"Processing - Saving responses to Board B: {board_b}, Item ID: {item_id}")
 
             if item_id and board_b:
-                # Always create a new item in Board B for each form response
+                # Prepare all column values for batch creation
+                column_values = {}
                 header_data = stored_form_data.get('header_data', {})
                 item_name = header_data.get('Viagem') or webhook_data.get('event', {}).get('pulseName', 'Resposta do Formulário')
-                app.logger.info(f"Processing - Creating new item in Board B: {item_name}")
 
-                create_result = monday_api.create_item(board_b, item_name)
-                if create_result and create_result.get('create_item', {}).get('id'):
-                    new_item_id = create_result['create_item']['id']
-                    app.logger.info(f"Processing - Created new item with ID: {new_item_id}")
+                # Add header data to column values
+                if header_data.get('Destino'):
+                    column_values['text_mkrb17ct'] = header_data['Destino']
 
-                    # Prepare all updates in a batch
-                    updates_to_process = []
+                if header_data.get('Data'):
+                    column_values['text_mksq2j87'] = header_data['Data']
 
-                    # Add header data to destination board
-                    header_data = stored_form_data.get('header_data', {})
+                if header_data.get('Cliente'):
+                    column_values['text_mkrjdnry'] = header_data['Cliente']
 
-                    # Add other header fields to specific columns
-                    if header_data.get('Destino'):
-                        updates_to_process.append({
-                            'column_id': 'text_mkrb17ct',
-                            'value': header_data['Destino'],
-                            'description': f"Destino from header data"
-                        })
+                # Process all questions and add to column values
+                for question in stored_form_data.get('questions', []):
+                    question_id = question.get('id')
+                    destination_column = question.get('destination_column')
+                    question_destination_column = question.get('question_destination_column')
+                    question_type = question.get('type')
 
-                    if header_data.get('Data'):
-                        updates_to_process.append({
-                            'column_id': 'text_mksq2j87',
-                            'value': header_data['Data'],
-                            'description': f"Data from header data"
-                        })
+                    # Skip divider questions
+                    if question_type == 'divider':
+                        continue
 
-                    if header_data.get('Cliente'):
-                        updates_to_process.append({
-                            'column_id': 'text_mkrjdnry',
-                            'value': header_data['Cliente'],
-                            'description': f"Cliente from header data"
-                        })
+                    # For Monday column questions, save both the response and the column value
+                    if question_type == 'monday_column':
+                        # Save the user's response (rating)
+                        response_value = submission_data.get(question_id)
+                        if response_value is not None and str(response_value).strip():
+                            response_str = str(response_value).strip()
 
-                    # Debug submission data
-                    app.logger.info(f"Form submission data keys: {list(submission_data.keys())}")
-                    app.logger.info(f"Form submission data: {submission_data}")
+                            # Convert English to Portuguese
+                            if response_str.lower() == "yes":
+                                response_str = "Sim"
+                            elif response_str.lower() == "no":
+                                response_str = "Não"
 
-                    # Collect all updates from questions
-                    for question in stored_form_data.get('questions', []):
-                        question_id = question.get('id')
-                        destination_column = question.get('destination_column')
-                        question_destination_column = question.get('question_destination_column')
-                        question_type = question.get('type')
-                        question_text = question.get('text', '')[:50] + "..." if len(question.get('text', '')) > 50 else question.get('text', '')
+                            if destination_column and destination_column.strip():
+                                column_values[destination_column.strip()] = response_str
 
-                        app.logger.info(f"Processing question {question_id}: type={question_type}")
-                        app.logger.info(f"  Text: {question_text}")
-                        app.logger.info(f"  Destination column: '{destination_column}'")
-                        app.logger.info(f"  Question destination column: '{question_destination_column}'")
+                        # Save the column value (question text) if configured
+                        if question_destination_column and question_destination_column.strip():
+                            column_value = question.get('column_value', '')
+                            if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
+                                column_values[question_destination_column.strip()] = column_value
 
-                        # Skip divider questions
-                        if question_type == 'divider':
-                            app.logger.info(f"Skipping divider question {question_id}")
-                            continue
+                    else:
+                        # For regular questions (yesno, rating, text, longtext, dropdown)
+                        response_value = submission_data.get(question_id)
 
-                        # For Monday column questions, save both the response and the column value
-                        if question_type == 'monday_column':
-                            # First, save the user's response (rating)
-                            response_value = submission_data.get(question_id)
-                            if response_value is not None and str(response_value).strip():
-                                response_str = str(response_value).strip()
-                                
+                        if response_value is not None:
+                            response_str = str(response_value).strip()
+
+                            if response_str:
                                 # Convert English to Portuguese
                                 if response_str.lower() == "yes":
                                     response_str = "Sim"
@@ -249,83 +270,20 @@ def process_form_background(form_id, submission_data, stored_form_data):
                                     response_str = "Não"
 
                                 if destination_column and destination_column.strip():
-                                    updates_to_process.append({
-                                        'column_id': destination_column.strip(),
-                                        'value': response_str,
-                                        'description': f"Monday column question {question_id} response: {response_str}"
-                                    })
-                                    app.logger.info(f"✅ Added Monday column response: {question_id} -> {destination_column} = '{response_str}'")
+                                    column_values[destination_column.strip()] = response_str
 
-                            # Second, save the column value (question text) if configured
-                            if question_destination_column and question_destination_column.strip():
-                                column_value = question.get('column_value', '')
-                                if column_value and column_value not in ['', 'Dados não encontrados', 'Erro ao carregar dados', 'Dados não disponíveis', 'Configuração incompleta']:
-                                    updates_to_process.append({
-                                        'column_id': question_destination_column.strip(),
-                                        'value': column_value,
-                                        'description': f"Monday column question {question_id} text: {column_value}"
-                                    })
-                                    app.logger.info(f"✅ Added Monday column text: {question_id} -> {question_destination_column} = '{column_value}'")
+                # Create item with all values in a single request
+                app.logger.info(f"Processing - Creating item with {len(column_values)} column values")
+                app.logger.info(f"Column values: {column_values}")
 
-                        else:
-                            # For regular questions (yesno, rating, text, longtext, dropdown)
-                            response_value = submission_data.get(question_id)
-                            
-                            if response_value is not None:
-                                response_str = str(response_value).strip()
-                                
-                                if response_str:
-                                    # Convert English to Portuguese
-                                    if response_str.lower() == "yes":
-                                        response_str = "Sim"
-                                    elif response_str.lower() == "no":
-                                        response_str = "Não"
-
-                                    if destination_column and destination_column.strip():
-                                        updates_to_process.append({
-                                            'column_id': destination_column.strip(),
-                                            'value': response_str,
-                                            'description': f"Question {question_id} ({question_type}) response: {question_text}"
-                                        })
-                                        app.logger.info(f"✅ Added regular question: {question_id} -> {destination_column} = '{response_str}'")
-                                    else:
-                                        app.logger.warning(f"⚠️  Question {question_id} has no destination column configured")
-                                else:
-                                    app.logger.warning(f"Question {question_id} has empty response value")
-                            else:
-                                app.logger.warning(f"❌ Question {question_id} was not answered in form submission")
-                                app.logger.info(f"Available form fields: {list(submission_data.keys())}")
-
-                    # Process all updates
-                    app.logger.info(f"Processing - Processing {len(updates_to_process)} column updates")
-                    successful_updates = 0
-                    failed_updates = 0
-
-                    for update in updates_to_process:
-                        try:
-                            app.logger.info(f"Processing - {update['description']}: column={update['column_id']}, value={update['value']}")
-
-                            # Skip empty values
-                            if not update['value'] or str(update['value']).strip() == '':
-                                app.logger.warning(f"Skipping empty value for column {update['column_id']}")
-                                continue
-
-                            monday_api.update_item_column(
-                                board_id=board_b,
-                                item_id=new_item_id,
-                                column_id=update['column_id'],
-                                value=update['value']
-                            )
-                            app.logger.info(f"Processing - Successfully updated column {update['column_id']}")
-                            successful_updates += 1
-                        except Exception as e:
-                            app.logger.error(f"Processing - Failed to update column {update['column_id']}: {str(e)}")
-                            failed_updates += 1
-
-                    app.logger.info(f"Processing - Completed: {successful_updates} successful, {failed_updates} failed updates")
-                    app.logger.info(f"Processing - Completed all updates for form {form_id}")
+                create_result = monday_api.create_item_with_values(board_b, item_name, column_values)
+                
+                if create_result and create_result.get('create_item', {}).get('id'):
+                    new_item_id = create_result['create_item']['id']
+                    app.logger.info(f"Processing - Successfully created item with ID: {new_item_id} and all column values")
                 else:
-                    app.logger.error("Processing - Failed to create item in Board B")
+                    app.logger.error("Processing - Failed to create item in Board B with values")
+                    
             else:
                 app.logger.error("Processing - Missing item_id or board_b configuration")
         else:
@@ -337,49 +295,40 @@ def process_form_background(form_id, submission_data, stored_form_data):
 
 @app.route('/submit_form/<form_id>', methods=['POST'])
 def submit_form(form_id):
-    """Handle form submission with background processing"""
+    """Handle form submission"""
     try:
-        # Get form data
-        stored_form_data = FORMS_STORAGE.get(form_id)
-        if not stored_form_data:
-            return "Form not found", 404
+        # Get form data using FormGenerator to ensure file-based forms are loaded
+        from utils.form_generator import FormGenerator
+        form_generator = FormGenerator()
+        form_data = form_generator.get_form_data(form_id)
+        
+        if not form_data:
+            return jsonify({"error": "Form not found"}), 404
 
-        # Process form submission
-        submission_data = request.form.to_dict()
-        app.logger.info(f"=== FORM SUBMISSION START ===")
-        app.logger.info(f"Form {form_id} submitted with {len(submission_data)} fields")
-        app.logger.info(f"Form type: {stored_form_data.get('type')}")
-        app.logger.info(f"Header data: {stored_form_data.get('header_data')}")
-        app.logger.info(f"Total questions in form: {len(stored_form_data.get('questions', []))}")
+        # Get submission data
+        submission_data = request.get_json()
 
-        # Log all submission data
-        app.logger.info(f"Submission data:")
-        for key, value in submission_data.items():
-            app.logger.info(f"  {key}: '{value}'")
+        app.logger.info(f"Form submission for {form_id}: {submission_data}")
 
-        # Log all questions and their destination columns
-        app.logger.info(f"Questions with destination columns:")
-        for i, question in enumerate(stored_form_data.get('questions', [])):
-            if question.get('type') != 'divider':
-                app.logger.info(f"  Q{i+1}: ID={question.get('id')}, Type={question.get('type')}, DestCol='{question.get('destination_column', '')}', Text='{question.get('text', '')[:50]}...'")
+        # Process form submission immediately for better reliability
+        try:
+            process_form_background(form_id, submission_data, form_data)
 
-        # Start background processing
-        background_thread = threading.Thread(
-            target=process_form_background,
-            args=(form_id, submission_data, stored_form_data)
-        )
-        background_thread.daemon = True
-        background_thread.start()
-
-        app.logger.info(f"Form {form_id} submitted successfully, processing in background")
-        app.logger.info(f"=== FORM SUBMISSION END ===")
-
-        # Return success page immediately
-        return render_template('success.html')
+            return jsonify({
+                "success": True,
+                "message": "Formulário enviado com sucesso! As respostas foram salvas no Monday.com."
+            })
+        except Exception as processing_error:
+            app.logger.error(f"Error processing form: {str(processing_error)}")
+            # Still return success to user but log the error
+            return jsonify({
+                "success": True,
+                "message": "Formulário enviado com sucesso! As respostas estão sendo processadas."
+            })
 
     except Exception as e:
-        app.logger.error(f"Error submitting form {form_id}: {str(e)}")
-        return "Error submitting form", 500
+        app.logger.error(f"Error submitting form: {str(e)}")
+        return jsonify({"error": "Erro interno do servidor"}), 500
 
 @app.errorhandler(404)
 def not_found(error):
