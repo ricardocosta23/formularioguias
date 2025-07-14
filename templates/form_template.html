@@ -278,36 +278,45 @@
         // Handle conditional questions
         function handleConditionalQuestions() {
             const conditionalQuestions = document.querySelectorAll('[data-depends-on]');
+            
+            console.log('🔄 Initializing conditional questions:', conditionalQuestions.length);
 
-            conditionalQuestions.forEach(questionElement => {
+            conditionalQuestions.forEach((questionElement, index) => {
                 const dependsOn = questionElement.getAttribute('data-depends-on');
                 const showIf = questionElement.getAttribute('data-show-if') || 'yes';
+
+                console.log(`Setting up conditional question ${index + 1}: depends on "${dependsOn}", show if "${showIf}"`);
+
+                // ALWAYS start hidden
+                questionElement.style.display = 'none';
+                
+                // Remove required attributes initially for all hidden questions
+                const hiddenInputs = questionElement.querySelectorAll('input[required], textarea[required], select[required]');
+                hiddenInputs.forEach(hiddenInput => {
+                    hiddenInput.setAttribute('data-originally-required', 'true');
+                    hiddenInput.removeAttribute('required');
+                });
 
                 if (dependsOn) {
                     // Find parent question inputs
                     const dependentInputs = document.querySelectorAll(`input[name="${dependsOn}"], select[name="${dependsOn}"]`);
+                    
+                    console.log(`Found ${dependentInputs.length} dependent inputs for "${dependsOn}"`);
 
                     dependentInputs.forEach(input => {
+                        // Add change listener
                         input.addEventListener('change', function() {
+                            console.log(`Parent question "${dependsOn}" changed to: "${this.value}"`);
                             toggleConditionalQuestion(questionElement, this.value, showIf);
                         });
 
-                        // Check initial state
+                        // Check initial state - but question should remain hidden initially
                         if (input.type === 'radio' && input.checked) {
+                            console.log(`Initial state: radio "${dependsOn}" is checked with value "${input.value}"`);
                             toggleConditionalQuestion(questionElement, input.value, showIf);
                         } else if (input.type !== 'radio' && input.value) {
+                            console.log(`Initial state: field "${dependsOn}" has value "${input.value}"`);
                             toggleConditionalQuestion(questionElement, input.value, showIf);
-                        }
-                        
-                        // Ensure conditional questions start hidden regardless
-                        if (!input.checked && (input.type !== 'radio' || input.value === '')) {
-                            questionElement.style.display = 'none';
-                            // Also remove required attributes initially for hidden questions
-                            const hiddenInputs = questionElement.querySelectorAll('input[required], textarea[required], select[required]');
-                            hiddenInputs.forEach(hiddenInput => {
-                                hiddenInput.setAttribute('data-originally-required', 'true');
-                                hiddenInput.removeAttribute('required');
-                            });
                         }
                     });
                 }
@@ -318,11 +327,16 @@
             // If showIf is empty, default to "yes"
             const targetValue = showIf || 'yes';
             
-            // Handle both Portuguese and English values
+            console.log(`🔄 Toggle conditional: currentValue="${currentValue}", targetValue="${targetValue}"`);
+            
+            // Handle both Portuguese and English values for "yes"
             const shouldShow = currentValue === targetValue || 
                               (targetValue === 'yes' && (currentValue === 'yes' || currentValue === 'Sim'));
 
+            console.log(`Should show: ${shouldShow}`);
+
             if (shouldShow) {
+                console.log('✅ Showing conditional question');
                 questionElement.style.display = 'block';
                 questionElement.style.opacity = '0';
                 questionElement.style.transform = 'translateY(-10px)';
@@ -331,6 +345,7 @@
                 const conditionalInputs = questionElement.querySelectorAll('input[data-originally-required], textarea[data-originally-required], select[data-originally-required]');
                 conditionalInputs.forEach(input => {
                     input.setAttribute('required', 'required');
+                    console.log(`Restored required attribute for: ${input.name || input.id}`);
                 });
 
                 setTimeout(() => {
@@ -339,6 +354,7 @@
                     questionElement.style.transform = 'translateY(0)';
                 }, 10);
             } else {
+                console.log('❌ Hiding conditional question');
                 questionElement.style.display = 'none';
                 questionElement.style.opacity = '';
                 questionElement.style.transform = '';
@@ -349,6 +365,9 @@
                 hiddenInputs.forEach(hiddenInput => {
                     if (hiddenInput.type === 'radio' || hiddenInput.type === 'checkbox') {
                         hiddenInput.checked = false;
+                    } else if (hiddenInput.type === 'hidden') {
+                        // Clear hidden input values (like ratings)
+                        hiddenInput.value = '';
                     } else if (hiddenInput.type !== 'hidden') {
                         hiddenInput.value = '';
                     }
@@ -357,7 +376,14 @@
                     if (hiddenInput.hasAttribute('required')) {
                         hiddenInput.setAttribute('data-originally-required', 'true');
                         hiddenInput.removeAttribute('required');
+                        console.log(`Removed required attribute from: ${hiddenInput.name || hiddenInput.id}`);
                     }
+                });
+
+                // Also clear any selected rating circles
+                const ratingCircles = questionElement.querySelectorAll('.rating-circle.selected');
+                ratingCircles.forEach(circle => {
+                    circle.classList.remove('selected');
                 });
             }
         }
@@ -611,6 +637,8 @@
                     let questionId = null;
 
                     console.log(`Checking section ${index}:`, questionSection);
+                    console.log('Section display:', window.getComputedStyle(questionSection).display);
+                    console.log('Section visibility:', questionSection.offsetHeight > 0);
 
                     // Check for yes/no radio buttons
                     const yesNoRadios = questionSection.querySelectorAll('input[type="radio"][required]');
